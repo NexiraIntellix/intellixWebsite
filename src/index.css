@@ -1457,12 +1457,15 @@ html.nx-inverted .nx-header-inner a[href="#contact"] {
   margin: 0 auto;
   padding: 20px 36px;
   border-radius: 0;
+  /* An even ease-in-out, not an ease-out. The old curve covered 90% of the
+     distance in the first ~120ms -- 125px a frame at the start -- which reads
+     as a snap with a long settle, not as a glide. */
   transition:
-    width 0.62s cubic-bezier(0.22, 1, 0.28, 1),
-    padding 0.62s cubic-bezier(0.22, 1, 0.28, 1),
-    margin-top 0.62s cubic-bezier(0.22, 1, 0.28, 1),
-    gap 0.62s cubic-bezier(0.22, 1, 0.28, 1),
-    border-radius 0.5s ease;
+    width 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+    padding 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+    margin-top 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+    gap 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+    border-radius 0.8s cubic-bezier(0.65, 0, 0.35, 1);
 }
 /* The island's surface. A pseudo-element so it needs no node and its opacity
    can ride --island directly, the same signal that drives the geometry. */
@@ -1641,6 +1644,146 @@ html.nx-inverted .nx-nav-current { color: var(--ink) !important; }
     font-size: 13px;
   }
 }
+/* The pill-only pieces never show on phones. */
+.nx-mark-pill, .nx-cta-pill, .nx-lbl-pill { display: none; }
+
+/* Desktop: full-width bar over the hero, centred pill past it.
+   The geometry (width -- set in px by Header.jsx -- padding, margin, gap,
+   radius) runs on the .nx-header-inner transitions above. Everything that
+   changes style rather than size crossfades: each label exists in both type
+   styles in one grid cell, so nothing reflows while the morph runs. */
+@media (min-width: 721px) {
+  .nx-header-inner[data-pill] {
+    max-width: calc(100% - 40px);
+    margin-top: 14px;
+    padding: 8px 8px 8px 28px;
+    border-radius: 999px;
+    gap: clamp(22px, 3vw, 46px);
+  }
+  .nx-header-inner::before { opacity: 0; transition: opacity 0.7s ease; }
+  .nx-header-inner[data-pill]::before { opacity: 1; border-color: rgba(232, 135, 58, 0.26); }
+  .nx-header-inner[data-pill] .nx-nav { gap: clamp(22px, 3vw, 46px); }
+  .nx-header-inner[data-pill] .nx-nav-links { gap: clamp(18px, 2.3vw, 34px); }
+  .nx-nav, .nx-nav-links { transition: gap 0.8s cubic-bezier(0.65, 0, 0.35, 1); }
+  .nx-nav-current { display: none !important; }
+
+  /* Stacked labels: one cell, two layers. */
+  .nx-mark-stack, .nx-nav-link, .nx-cta-stack { display: inline-grid; align-items: center; }
+  .nx-mark-bar, .nx-mark-pill, .nx-lbl-bar, .nx-lbl-pill, .nx-cta-long, .nx-cta-pill {
+    grid-area: 1 / 1;
+    transition: opacity 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .nx-lbl-bar, .nx-lbl-pill, .nx-cta-long, .nx-cta-pill { justify-self: center; }
+  .nx-mark-pill, .nx-lbl-pill, .nx-cta-pill { display: block; opacity: 0; }
+  .nx-header-inner[data-pill] .nx-mark-bar,
+  .nx-header-inner[data-pill] .nx-lbl-bar,
+  .nx-header-inner[data-pill] .nx-cta-long { opacity: 0; }
+  .nx-header-inner[data-pill] .nx-mark-pill,
+  .nx-header-inner[data-pill] .nx-lbl-pill,
+  .nx-header-inner[data-pill] .nx-cta-pill { opacity: 1; }
+
+  /* The pill's type: spaced uppercase mono, as on the parent site's nav. */
+  .nx-lbl-pill, .nx-cta-pill {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .nx-mark-pill {
+    justify-self: start;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1;
+    letter-spacing: 0.03em;
+    color: var(--text-strong);
+  }
+  .nx-mark-pill > span {
+    display: block;
+    margin-top: 5px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.42em;
+    color: var(--accent);
+  }
+  .nx-header-inner[data-pill] .nx-nav-link { color: rgba(255, 250, 244, 0.62); }
+  .nx-header-inner[data-pill] .nx-nav-link:hover,
+  .nx-header-inner[data-pill] .nx-nav-link[aria-current] { color: rgba(255, 250, 244, 0.95); }
+
+  /* CTA: the orange fill lives on a layer of its own so it can fade -- a
+     gradient cannot transition to "none" -- while the outline fades in. */
+  .nx-head-cta {
+    isolation: isolate;
+    background: transparent;
+    border: 1px solid transparent;
+    transition:
+      color 0.6s ease,
+      border-color 0.6s ease,
+      background-color 0.22s ease,
+      padding 0.8s cubic-bezier(0.65, 0, 0.35, 1),
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.25s ease;
+  }
+  .nx-head-cta::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    background: linear-gradient(100deg, var(--a-5), var(--a-6));
+    transition: opacity 0.6s ease;
+  }
+  .nx-header-inner[data-pill] .nx-head-cta {
+    padding: 11px 22px;
+    color: var(--text-strong);
+    border-color: rgba(255, 250, 244, 0.24);
+    /* Leaving hover runs this transition, so its colour has to keep pace with
+       the fill fading out, or the dark label lingers on the dark bar. The
+       padding keeps the slow morph. */
+    transition:
+      color 0.22s ease,
+      border-color 0.22s ease,
+      background-color 0.22s ease,
+      box-shadow 0.22s ease,
+      padding 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+  .nx-header-inner[data-pill] .nx-head-cta::before { opacity: 0; }
+  /* Same hover as the outlined "See programs" button on the globe panel: the
+     outline fills white, the label inverts to the ground colour, and a blurred
+     halo surrounds it. Both shadows are blurred -- a zero-blur spread draws a
+     hard second edge instead of light. */
+  .nx-header-inner[data-pill] .nx-head-cta:hover,
+  .nx-header-inner[data-pill] .nx-head-cta:focus-visible {
+    transform: none;
+    background: #ffffff;
+    border-color: #ffffff;
+    color: var(--s-1);
+    box-shadow:
+      0 0 16px rgba(255, 255, 255, 0.30),
+      0 0 52px 10px rgba(255, 255, 255, 0.34);
+    /* The bar-to-pill morph eases colour over 0.6s; on hover that would leave
+       the label white on a white fill for half the fade. Label, fill and edge
+       move together here. */
+    transition:
+      color 0.22s ease,
+      border-color 0.22s ease,
+      background-color 0.22s ease,
+      box-shadow 0.22s ease;
+  }
+  .nx-header-inner[data-pill] .nx-head-cta:active {
+    background: var(--text-strong);
+    border-color: var(--text-strong);
+    color: var(--s-1);
+  }
+}
+
+/* Under the aperture's light section the stacked mark flips with the rest. */
+html.nx-inverted .nx-header-inner .nx-mark-pill { color: var(--ink) !important; }
+/* The inverted CTA is solid ink; the orange fill layer would sit over it. */
+html.nx-inverted .nx-head-cta::before { opacity: 0 !important; }
+
 @media (prefers-reduced-motion: reduce) {
   .nx-header-inner, .nx-nav-pill, .nx-nav-current, .nx-nav-links { transition: none; }
 }

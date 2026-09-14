@@ -19,12 +19,25 @@ const SPY = [...LINKS, { id: "contact", label: "Contact" }];
 const TOP_LABEL = "Overview";
 
 /**
- * Full-width bar over the hero; a compact island once you are into the page,
- * expanding back to the full link set on hover or keyboard focus.
+ * Desktop: a full-width bar over the hero -- wordmark left, links and a filled
+ * CTA right -- that morphs into a centred pill with the same links as the
+ * hero leaves. The morph used to jump, for two reasons, and both are gone:
+ *
+ *   - Content changed mid-animation (the links swapped out for a section
+ *     label). Now every link stays, and each label is rendered in BOTH type
+ *     styles stacked in one grid cell and crossfaded, so no element changes
+ *     size when the style does.
+ *   - The target width was measured on the live element while its padding and
+ *     gap were themselves mid-transition, so it measured the wrong size.
+ *     It is measured on an off-screen clone instead.
+ *
+ * Phones (<=720px): wordmark + Contact over the hero, then a small island
+ * with the N badge and the section name -- all the links cannot fit there.
  *
  * Three signals drive it, kept separate so they cannot disagree:
  *   navOpacity — appears once the hero hands off
- *   solid      — bar collapses to island as the hero leaves
+ *   solid      — the hero leaving: deepens the desktop glass, and on phones
+ *                switches bar to island
  *   active     — which section owns the middle of the viewport
  */
 export default function Header({ navOpacity = 0, solid = 0 }) {
@@ -35,8 +48,24 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
   const [active, setActive] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [pill, setPill] = useState({ left: 0, width: 0, on: false });
+  const [phone, setPhone] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 720px)").matches
+  );
 
-  const island = solid > 0.5;
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 720px)");
+    const sync = () => setPhone(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  // Past the hero: phones collapse to the badge-and-label island, desktop to
+  // the centred pill. One threshold, two presentations.
+  const past = solid > 0.5;
+  const island = phone && past;
+  const pillMode = !phone && past;
+  const compact = island || pillMode;
 
   /**
    * Scroll spy: the last linked section whose top has passed the middle of the
@@ -91,25 +120,60 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
    */
   useLayoutEffect(() => {
     const el = innerRef.current;
-    if (!el) return;
+    const header = barRef.current;
+    if (!el || !header) return;
 
-    if (!island) {
-      // The full-width bar genuinely is 100%; let CSS own it.
-      el.style.width = "";
+    /* The compact width, read off a hidden copy: the live element's padding
+       and gap are transitioning too, so measured in place it reports a size
+       somewhere between the two states. The copy carries the same attributes,
+       so it lays out exactly as the compact bar will once it arrives. */
+    const compactWidth = () => {
+      const copy = el.cloneNode(true);
+      copy.style.cssText += ";position:absolute;visibility:hidden;pointer-events:none;transition:none;width:max-content;";
+      header.appendChild(copy);
+      const w = copy.getBoundingClientRect().width;
+      copy.remove();
+      return w;
+    };
+
+    const from = el.getBoundingClientRect().width;
+    const to = compact ? compactWidth() : header.clientWidth;
+
+    const settle = () => {
+      // Full width hands control back to CSS so it follows the window.
+      if (!compact) el.style.width = "";
+    };
+
+    if (Math.abs(to - from) < 0.5) {
+      el.style.width = compact ? `${to}px` : "";
       return;
     }
 
-    const from = el.getBoundingClientRect().width;
-
-    el.style.transition = "none";
-    el.style.width = "max-content";
-    const to = el.getBoundingClientRect().width;
-
+    // Pin the current width, flush it as a real frame, then set the target so
+    // the transition has two concrete pixel lengths to run between.
     el.style.width = `${from}px`;
-    void el.offsetWidth; // flush, so `from` is a real painted frame
-    el.style.transition = "";
+    void el.offsetWidth;
     el.style.width = `${to}px`;
-  }, [island, expanded, active]);
+
+    const onEnd = (e) => {
+      if (e.target === el && e.propertyName === "width") settle();
+    };
+    el.addEventListener("transitionend", onEnd);
+
+    /* Resizing mid-pill: re-fit without animating. */
+    const onResize = () => {
+      if (!compact) return;
+      el.style.transition = "none";
+      el.style.width = `${compactWidth()}px`;
+      void el.offsetWidth;
+      el.style.transition = "";
+    };
+    window.addEventListener("resize", onResize);
+    return () => {
+      el.removeEventListener("transitionend", onEnd);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [compact, expanded, active]);
 
   /**
    * Position the indicator under the active link. Measured from the DOM, not
@@ -223,6 +287,7 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
         ref={innerRef}
         className="nx-header-inner"
         data-island={island || undefined}
+        data-pill={pillMode || undefined}
         data-expanded={island && expanded ? "true" : undefined}
         style={{ "--island": solid }}
         onMouseEnter={() => setExpanded(true)}
@@ -230,12 +295,19 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
         onFocus={() => setExpanded(true)}
         onBlur={onBlur}
       >
-        {/* Both forms of the mark are rendered; CSS picks one. The N badge
-            exists for the phone island, where the wordmark and a section label
-            cannot share ~300px -- everywhere else it is display: none. The
-            aria-label keeps the link's name the full name whichever is shown. */}
+        {/* Every form of the mark is rendered; CSS picks. The inline wordmark
+            is the bar's, the stacked one the desktop pill's -- the two share a
+            grid cell and crossfade. The N badge is the phone island's. The
+            aria-label keeps the link's name the full name whichever shows. */}
         <a href="#top" className="nx-head-mark" aria-label="Nexira IntelliX" style={{ display: "inline-flex" }}>
-          <Logo showIcon size={26} />
+          <span className="nx-mark-stack">
+            <span className="nx-mark-bar">
+              <Logo showIcon size={26} />
+            </span>
+            <span className="nx-mark-pill" aria-hidden="true">
+              NEXIRA<span>INTELLIX</span>
+            </span>
+          </span>
         </a>
 
         <nav className="nx-nav">
@@ -269,16 +341,25 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
                   aria-current={active === l.id ? "true" : undefined}
                   className="nx-nav-link"
                 >
-                  {l.label}
+                  {/* Both type styles, stacked and crossfaded, so the link is
+                      the same size in the bar and in the pill. */}
+                  <span className="nx-lbl-bar">{l.label}</span>
+                  <span className="nx-lbl-pill" aria-hidden="true">
+                    {l.label}
+                  </span>
                 </a>
               ))}
             </span>
           </span>
 
-          <a href="#contact" className="nx-head-cta">
-            {/* Two labels, one shown at a time. At 320px "Start something"
-                cannot coexist with the wordmark at any legible type size. */}
-            <span className="nx-cta-long">Start something</span>
+          <a href="#contact" className="nx-head-cta" aria-label="Contact">
+            {/* The bar's label and the pill's share a cell and crossfade. At
+                320px "Start something" cannot coexist with the wordmark at any
+                legible type size, so phones that narrow get the short one. */}
+            <span className="nx-cta-stack">
+              <span className="nx-cta-long">Start something</span>
+              <span className="nx-cta-pill">Contact us</span>
+            </span>
             <span className="nx-cta-short">Contact</span>
           </a>
         </nav>

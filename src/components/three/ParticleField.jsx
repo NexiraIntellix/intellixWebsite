@@ -19,12 +19,15 @@ import { buildPointCloud } from "./pointCloud.js";
  * Particle budget by viewport.
  *
  * Scaled by width rather than by a device sniff: the constraint is fill rate and
- * buffer size, both of which track the actual surface being drawn. A phone gets
- * a quarter of the points, which at phone scale is visually indistinguishable
- * because the points are larger relative to the screen.
+ * buffer size, both of which track the actual surface being drawn.
+ *
+ * Phones were on a quarter of the desktop count, on the theory that larger
+ * points make up for it. On the globe they did not: pulled back to fit a
+ * narrow frame, the sphere is small, and at 22k points it read as a faint
+ * haze rather than an object. A third of desktop holds its surface.
  */
 function particleBudget(width) {
-  if (width < 640) return 22000;
+  if (width < 640) return 30000;
   if (width < 1100) return 48000;
   return 90000;
 }

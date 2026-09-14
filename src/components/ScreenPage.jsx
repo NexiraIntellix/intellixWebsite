@@ -222,11 +222,31 @@ function ScreenPage({ width, height, scale, progressRef, visible }) {
            rather than two unrelated blocks. Still 44px tall: the padding comes
            off the sides, not the top. */
         @media (max-width: 640px) {
-          .nx-screen-cta { margin-top: 26px; gap: 10px; }
+          .nx-screen-cta { margin-top: 20px; gap: 8px; }
           .nx-screen-btn {
-            padding: 12px 18px;
-            font-size: 14px;
-            border-radius: 12px;
+            padding: 11px 16px;
+            font-size: 13.5px;
+            border-radius: 10px;
+          }
+        }
+
+        /* Phones held upright, final panel only: the globe is as wide as the
+           screen and centred, and the copy -- headline, paragraph, two
+           buttons -- is the same height and also centred, so it sat squarely
+           on top of it and the scrim darkened whatever was left. On this panel
+           the globe lifts into the upper half and the copy drops below it,
+           with the scrim moved down to sit behind the copy alone. The other
+           panels are terrain and loose returns, which read fine behind text.
+           Gliding, not snapping, since the panel change is scroll-driven. */
+        @media (max-width: 640px) and (max-aspect-ratio: 4/5) {
+          .nx-screen-field { transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1); }
+          .nx-screen-root[data-last] .nx-screen-field { transform: translateY(-17%); }
+          .nx-screen-scrim, .nx-screen-scrim-low { transition: opacity 0.9s ease; }
+          .nx-screen-root[data-last] .nx-screen-scrim { opacity: 0; }
+          .nx-screen-root[data-last] .nx-screen-scrim-low { opacity: 1; }
+          .nx-screen-root[data-last] .nx-screen-copy {
+            justify-content: flex-end !important;
+            padding-bottom: 8vh;
           }
         }
 
@@ -236,10 +256,14 @@ function ScreenPage({ width, height, scale, progressRef, visible }) {
           .nx-screen-btn, .nx-screen-btn:hover, .nx-screen-btn:active { transform: none; }
         }
       `}</style>
-      <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background: "var(--s-1)" }}>
+      <div
+        className="nx-screen-root"
+        data-last={last || undefined}
+        style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background: "var(--s-1)" }}
+      >
 
         {/* Scroll-driven point cloud */}
-        <div style={{ position: "absolute", inset: 0 }}>
+        <div className="nx-screen-field" style={{ position: "absolute", inset: 0 }}>
           <Canvas
             frameloop={visible ? "always" : "never"}
             dpr={[1, 1.75]}
@@ -256,6 +280,7 @@ function ScreenPage({ width, height, scale, progressRef, visible }) {
             effect to protect the text. A horizontal band does the same job for
             legibility while leaving the globe's upper and lower arcs clear. */}
         <div
+          className="nx-screen-scrim"
           style={{
             position: "absolute",
             inset: 0,
@@ -264,6 +289,21 @@ function ScreenPage({ width, height, scale, progressRef, visible }) {
               "color-mix(in srgb, var(--s-1) 62%, transparent) 22%, " +
               "color-mix(in srgb, var(--s-1) 80%, transparent) 46%, " +
               "color-mix(in srgb, var(--s-1) 62%, transparent) 72%, transparent 100%)",
+            pointerEvents: "none",
+          }}
+        />
+        {/* The phone final panel's scrim: behind the copy at the bottom only,
+            leaving the lifted globe clear. Invisible everywhere else. */}
+        <div
+          className="nx-screen-scrim-low"
+          style={{
+            position: "absolute",
+            inset: 0,
+            opacity: 0,
+            background:
+              "linear-gradient(to bottom, transparent 0%, transparent 50%, " +
+              "color-mix(in srgb, var(--s-1) 70%, transparent) 66%, " +
+              "color-mix(in srgb, var(--s-1) 86%, transparent) 100%)",
             pointerEvents: "none",
           }}
         />
