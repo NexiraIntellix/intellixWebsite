@@ -1,22 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useProgress } from "@react-three/drei";
 import { lockScroll, unlockScroll } from "../hooks/useLenis.js";
-import BoldGlitchText from "./BoldGlitchText.jsx";
+import LaptopLineLoader from "@/components/ui/laptop-line-loader";
 
 /**
  * The intro panel.
  *
- * Ported from the Framer marketplace "Animation loader". Its shape is kept
- * exactly: a 4px rule wiping across the middle, a house-sized 0-100 counter
- * set hard right, and, at the end, the whole panel collapsing to a 2px line
- * that rounds off and goes.
+ * The face of it is the hero laptop drawn in lines, stroke by stroke, as the
+ * page loads -- traced in the pose and place the real 3D laptop occupies, so
+ * the drawing completes exactly where the model is revealed (see
+ * components/ui/laptop-line-loader). The exit is a crossfade, not a wipe:
+ * the dark ground goes first, so for a moment the finished lines sit over the
+ * real laptop they were drawn from, and then the lines go too.
  *
- * The original's fourth element, a wordmark at the top left blurring in a
- * character at a time, is dropped -- the name is already the first thing the
- * hero says, and saying it twice in three seconds is not emphasis. Its slot is
- * held open so the rule keeps the height it was composed at.
- *
- * Two more things are not kept.
+ * Two things from that Framer original are not kept.
  *
  * The original counts to 100 on a three-second timer and its own help text
  * tells you to hand-match the counter duration to the transition duration so
@@ -36,17 +33,24 @@ import BoldGlitchText from "./BoldGlitchText.jsx";
 
 /* A floor, not a duration. Real progress can arrive in one jump from a warm
    cache, and a counter that reads 0 then 100 with nothing in between reads as
-   a glitch -- so the number is not allowed to climb faster than this, and the
-   ease makes it sprint then settle the way the original's does. */
-const MIN_MS = 3000;
+   a glitch -- so the number is not allowed to climb faster than this.
+   The loader is now a line drawing that builds with this number, so the floor
+   is set by how long the drawing needs to read as drawn rather than flashed:
+   5.5s, on an ease that starts and ends gently instead of sprinting off the
+   mark. A slow connection is not held back by it -- real loading taking
+   longer than the floor still decides when it ends. */
+const MIN_MS = 5500;
 const CREEP_TO = 92;
-const CREEP_MS = 2600;
-const FINISH_MS = 500;
+const CREEP_MS = 4200;
+const FINISH_MS = 1100;
 const NO_LOAD_MS = 4500;
+/* The finished drawing holds this long before the crossfade starts. */
+const HOLD_MS = 650;
 
 /* Matches the original's [.12,.23,.5,1] closely enough: fast off the mark,
    long tail into 100. */
 const easeOut = (t) => 1 - Math.pow(1 - t, 2.6);
+const easeInOut = (t) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 
 
 /* Once per page load. React can mount this twice -- StrictMode does it on
@@ -90,129 +94,42 @@ html.nx-al-locked { padding-right: var(--nx-al-sbw, 0px); }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: opacity 300ms ease 600ms;
+  /* Second half of the crossfade: the lines go once the ground has. */
+  transition: opacity 520ms ease 380ms;
 }
 .nx-al.is-out { opacity: 0; }
 
-/* The collapse. Framer did it by dropping the wrapper from flex:1 to a fixed
-   2px; height is the honest version of the same move and it is the one
-   property a browser can actually interpolate. */
 .nx-al-wrap {
   position: relative;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  transition: height 700ms cubic-bezier(0.77, 0.02, 0.24, 1.02);
 }
-.nx-al.is-out .nx-al-wrap { height: 2px; }
 
-/* Wider than the frame and bottom-anchored, so the radius at the end curves
-   away off both edges instead of cutting corners into view. */
+/* The ground. It fades first, on its own, so for a moment the finished
+   drawing sits directly over the real laptop it was traced from.
+   100vh and not dvh: the hero canvas is 100vh, and the drawing is placed in
+   units of this box's height -- on a phone the two differ by the URL bar. */
 .nx-al-mask {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 120%;
+  inset: 0;
   height: 100vh;
-  height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: border-radius 700ms cubic-bezier(0.77, 0.02, 0.24, 1.02);
+  transition: background-color 420ms ease;
 }
-.nx-al.is-out .nx-al-mask { border-radius: 50%; }
+.nx-al.is-out .nx-al-mask { background-color: transparent !important; }
+/* The caption shares its spot with the hero's "Scroll to enter" cue, so it
+   leaves before the ground does rather than printing over it. */
+.nx-al .nx-ll-caption { transition: opacity 160ms ease; }
+.nx-al.is-out .nx-ll-caption { opacity: 0; }
 
-.nx-al-content {
-  position: relative;
-  z-index: 1;
-  width: 83%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(18px, 3vw, 34px) clamp(20px, 3vw, 34px);
+.nx-al-field {
+  position: absolute;
+  inset: 0;
 }
-
-/* Unbounded 800: wide and geometric where the rest of the site is condensed,
-   which is the point -- the loader is the one screen that should not look like
-   the page behind it. Heavy enough that the glitch slices have real surface to
-   cut, which Chakra Petch at 700 did not.
-
-   Loaded in index.html alongside the Plex families and used nowhere else.
-   The note that used to sit here warned against Syne, on the grounds that
-   inline styles around the site named it and would be restyled. Those inline
-   styles are gone -- every heading resolves through --display now -- so the
-   warning no longer describes anything. */
-.nx-al-horizontal-cut-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.nx-al-half {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: "Anton", "Bebas Neue", "Unbounded", sans-serif;
-  font-weight: 900;
-  font-size: clamp(52px, 14vw, 195px);
-  line-height: 0.82;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.nx-al-half-top {
-  clip-path: inset(0 0 50% 0);
-  margin-bottom: -0.32em;
-}
-
-.nx-al-half-bottom {
-  clip-path: inset(50% 0 0 0);
-  margin-top: -0.32em;
-}
-
-.nx-al-strip {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  margin: -0.85em 0;
-}
-
-.nx-al-strip-title {
-  font-family: var(--display);
-  font-weight: 800;
-  font-size: clamp(14px, 3vw, 38px);
-  letter-spacing: 0.4em;
-  color: var(--a-6);
-  text-transform: uppercase;
-  white-space: nowrap;
-  background: var(--ink-2);
-  padding: 4px 20px 4px 28px;
-  text-shadow: 0 0 22px rgba(232, 135, 58, 0.45);
-}
-.nx-al-word-a {
-  position: relative;
-  z-index: 2;
-  color: var(--text-strong);
-}
-.nx-al-word-b { font: inherit; letter-spacing: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
-  /* No collapse. The panel still has to leave, so it fades. */
-  .nx-al-wrap, .nx-al-mask { transition: none; }
+  /* One plain fade, no staging. */
+  .nx-al-mask { transition: none; }
   .nx-al { transition: opacity 320ms ease; }
-  .nx-al.is-out .nx-al-wrap { height: 100%; }
-  .nx-al.is-out .nx-al-mask { border-radius: 0; }
 }
 `;
 
@@ -221,22 +138,33 @@ export default function AnimationLoader({
   textColor = "var(--text-strong)",
 }) {
   const { active, progress } = useProgress();
+  const [reducedMotion] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
   const [phase, setPhase] = useState(played ? "gone" : "in"); // in | out | gone
   const done = phase === "gone";
 
   // Read through refs inside the loop: rAF should not restart every time drei
   // nudges progress, and it must never close over a stale `active`.
-  const state = useRef({ active, progress, shown: 0, sawActive: false, endAt: 0, endFrom: 0 });
+  const state = useRef({ active, progress, shown: 0, sawActive: false, endAt: 0, endFrom: 0, doneAt: 0 });
   state.current.active = active;
   state.current.progress = progress;
 
   useEffect(() => {
     let raf = 0;
-    const start = performance.now();
+    /* The loader's own clock, advanced by rendered frames rather than read off
+       the wall. The page stalls while it loads -- over a second and a half on
+       a cold dev server -- and on wall time the drawing would come out of that
+       stall already a quarter drawn, jumping to catch up. Capping each step
+       means a stall pauses the drawing instead of skipping part of it. */
+    let clock = 0;
+    let last = 0;
 
     const tick = (now) => {
       const s = state.current;
-      const t = now - start;
+      clock += last ? Math.min(50, now - last) : 0;
+      last = now;
+      const t = clock;
 
       if (s.active) s.sawActive = true;
       // `active` is false for the frame or two before the GLB request is even
@@ -252,16 +180,16 @@ export default function AnimationLoader({
         target = Math.min(99, Math.max(s.progress, creep));
       } else {
         if (!s.endAt) {
-          s.endAt = now;
+          s.endAt = clock;
           s.endFrom = s.shown;
         }
-        const k = easeOut(Math.min(1, (now - s.endAt) / FINISH_MS));
+        const k = easeInOut(Math.min(1, (clock - s.endAt) / FINISH_MS));
         target = s.endFrom + (100 - s.endFrom) * k;
       }
 
       // The floor. Monotonic, because a percentage that goes backwards is
       // worse than one that is wrong.
-      const cap = easeOut(Math.min(1, t / MIN_MS)) * 100;
+      const cap = easeInOut(Math.min(1, t / MIN_MS)) * 100;
       const next = Math.max(s.shown, Math.min(target, cap));
 
       /* Kept in the ref only. Nothing renders the number any more, and as
@@ -270,8 +198,11 @@ export default function AnimationLoader({
       s.shown = next;
 
       if (next >= 99.999 && !loading) {
-        setPhase("out");
-        return;
+        if (!s.doneAt) s.doneAt = clock;
+        if (clock - s.doneAt >= HOLD_MS) {
+          setPhase("out");
+          return;
+        }
       }
       raf = requestAnimationFrame(tick);
     };
@@ -336,27 +267,13 @@ export default function AnimationLoader({
 
       <div className="nx-al-wrap">
         <div className="nx-al-mask" style={{ background }}>
-          <div className="nx-al-content" aria-hidden="true">
-            <div className="nx-al-horizontal-cut-wrapper">
-              <div className="nx-al-half nx-al-half-top">LOADING</div>
-
-              <div className="nx-al-strip">
-                <BoldGlitchText
-                  className="nx-al-strip-title"
-                  text="THE NEW ERA"
-                  preset="editorial"
-                  presetStrength={0.72}
-                  presetSpeed={0.88}
-                  color="var(--a-6)"
-                  glitchColorA="#FF2D7A"
-                  glitchColorB="#00E5FF"
-                  glitchColorC="#FFE600"
-                  live={!out}
-                />
-              </div>
-
-              <div className="nx-al-half nx-al-half-bottom">LOADING</div>
-            </div>
+          <div className="nx-al-field" aria-hidden="true">
+            {/* Reads the same smoothed, monotonic number that decides when the
+                panel lifts, so the drawing completes exactly as it goes. */}
+            <LaptopLineLoader
+              getProgress={() => state.current.shown / 100}
+              reducedMotion={reducedMotion}
+            />
           </div>
         </div>
       </div>

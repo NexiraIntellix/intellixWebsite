@@ -1,3 +1,17 @@
+/* ── Tailwind ──────────────────────────────────────────────────────────
+   Theme tokens and utilities only -- no preflight. Preflight is a global
+   reset (margins, headings, images, buttons) and this site was built without
+   one; importing it would restyle every existing section. Utilities are also
+   generated only for src/components/ui (source(none) + @source), so a stray
+   word like `hidden` or `block` elsewhere in the codebase cannot turn into a
+   live class. Layered, so every existing unlayered rule below still wins. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@source "./components/ui";
+/* Shader and renderer source: GLSL identifiers like `grid` are not classes. */
+@source not "./components/ui/**/*-utils";
+
 /* ── Humane ───────────────────────────────────────────────────────────────
    An ultra-condensed display face whose caps very nearly fill the em, which
    is what makes it read as height rather than as text. Self-hosted: it is not
