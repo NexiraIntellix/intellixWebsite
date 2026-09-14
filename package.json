@@ -1,0 +1,29 @@
+{
+  "name": "nexira-intellix",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "frames": "node scripts/optimize-frames.mjs",
+    "logos": "node scripts/build-logos.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.26",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.169.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "playwright": "^1.62.1",
+    "sharp": "^0.35.4",
+    "simple-icons": "^16.29.0",
+    "vite": "^5.4.0"
+  }
+}

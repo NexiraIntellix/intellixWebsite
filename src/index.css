@@ -1,0 +1,1571 @@
+/* ── Humane ───────────────────────────────────────────────────────────────
+   An ultra-condensed display face whose caps very nearly fill the em, which
+   is what makes it read as height rather than as text. Self-hosted: it is not
+   on Google Fonts, and the hero is the only place that sets it large. Three
+   static cuts at ~20KB each rather than the variable file. */
+@font-face {
+  font-family: "Humane";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Humane-Regular.woff") format("woff");
+}
+@font-face {
+  font-family: "Humane";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/Humane-Medium.woff") format("woff");
+}
+@font-face {
+  font-family: "Humane";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/Humane-Bold.woff") format("woff");
+}
+
+:root {
+  /* ── Amber ─────────────────────────────────────────────────────────────
+     The palette this site started on, restored.
+
+     A sequential ramp in a single hue, on a ground that is warm-shifted
+     rather than neutral black -- because amber on a blue-black reads as two
+     colour temperatures fighting, and on a warm ground it reads as one light.
+     It is the construction of a single-band elevation key: items told apart
+     by lightness, the way a contour sheet does it.
+
+     The structural steps --s-4 and --s-5 did not exist in the original, which
+     had no tokens above --surface-2; they are the warm continuation of that
+     ramp, added because components written since expect them. Everything from
+     --a-1 to --muted-2 is the original value. */
+
+  /* Structure — warm near-black */
+  --s-0: #060403;
+  --s-1: #0A0704;
+  --s-2: #150F0A;
+  --s-3: #1E160F;
+  --s-4: #2A2018;
+  --s-5: #3D2F22;
+
+  /* Signal — one hue, nine lightnesses */
+  --a-1: #6E360A;
+  --a-2: #8A4610;
+  --a-3: #A65614;
+  --a-4: #C26718;
+  --a-5: #DD7C22;
+  --a-6: #FF9A3C;   /* accent */
+  --a-7: #FFB166;
+  --a-8: #FFC890;
+  --a-9: #FFDDBA;
+
+  /* Secondary — the violet the point cloud carried at its low elevations
+     before any of this. Kept for that job and for links; nothing large. */
+  --c-3: #4A3A9E;
+  --c-5: #6A55D6;
+  --c-6: #7C5CFF;
+  --c-8: #B3A5FF;
+
+  /* Point cloud, low to high elevation. Its own three values, not the ramp:
+     these are the colours the cloud shipped with and the ones asked for back.
+     They sit here rather than in the component so a palette can restate them
+     -- see the blocks below, where each one maps the cloud onto its own hues. */
+  --cloud-1: #7C5CFF;
+  --cloud-2: #4FE3F7;
+  --cloud-3: #CFFF63;
+
+  --ok:    #5FB98A;
+  --alert: #D9534F;
+
+  --accent: var(--a-6);
+  --accent-hi: var(--a-8);
+  --accent-lo: var(--a-3);
+
+  --ink: var(--s-1);
+  --ink-2: var(--s-0);
+  --surface: var(--s-2);
+  --surface-2: var(--s-3);
+
+  --text: #F3EAE1;
+  --text-strong: #FFFAF4;
+  --muted: #AC9C8D;
+  --muted-2: #877869;
+  --hairline: rgba(255, 172, 105, 0.10);
+
+  --display-xl: "Humane", "Clash Display", system-ui, sans-serif;
+  --display: "Satoshi", "IBM Plex Sans", system-ui, sans-serif;
+  --body: "Satoshi", "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* The hero wordmark's size, shared rather than inlined, because something
+     else now has to be placed against it: the spin badge sits over the final
+     X of INTELLIX, and where that letter lands is a function of this. See
+     .nx-spin-slot. */
+  --nx-hero-fs: clamp(42px, 12.6vw, 262px);
+  /* The spin badge's diameter. Read by the badge and by the slot that places
+     it, which has to subtract it. */
+  --nx-spin-size: 138px;
+}
+
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+/* Was #A5F3FC -- a cyan left over from the violet/cyan palette this project
+   replaced, hard-coded rather than tokenised, so it survived the switch back to
+   amber and turned every unstyled link's hover a colour that is nowhere else on
+   the site. A hover does not need a hue of its own: white is the brightest
+   thing on this page, which is all "you are on it" has to say. */
+a:hover { color: var(--text-strong); }
+
+input, textarea, select { font-family: inherit; }
+
+@keyframes nx-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(30px, -40px, 0) scale(1.12); }
+}
+@keyframes nx-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes nx-hint {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(7px); opacity: 1; }
+}
+
+/* Liquid Cosmos background animations */
+@keyframes nx-orb-a {
+  0%   { transform: translate(0,    0)    scale(1);    opacity: 0.55; }
+  33%  { transform: translate(80px, -60px) scale(1.18); opacity: 0.72; }
+  66%  { transform: translate(-40px, 50px) scale(0.9);  opacity: 0.48; }
+  100% { transform: translate(0,    0)    scale(1);    opacity: 0.55; }
+}
+@keyframes nx-orb-b {
+  0%   { transform: translate(0,    0)    scale(1);    opacity: 0.42; }
+  40%  { transform: translate(-90px, 70px) scale(1.22); opacity: 0.62; }
+  80%  { transform: translate(60px, -30px) scale(0.88); opacity: 0.38; }
+  100% { transform: translate(0,    0)    scale(1);    opacity: 0.42; }
+}
+@keyframes nx-orb-c {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.35; }
+  50%  { transform: translate(50px, 80px) scale(1.3); opacity: 0.58; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+}
+@keyframes nx-aurora {
+  0%, 100% { transform: translateX(-8%) skewX(-6deg) scaleY(1);   opacity: 0.28; }
+  50%       { transform: translateX(8%)  skewX(6deg)  scaleY(1.1); opacity: 0.42; }
+}
+@keyframes nx-aurora-2 {
+  0%, 100% { transform: translateX(6%)  skewX(4deg)  scaleY(1);   opacity: 0.22; }
+  50%       { transform: translateX(-6%) skewX(-4deg) scaleY(1.08); opacity: 0.36; }
+}
+@keyframes nx-grid-shimmer {
+  0%, 100% { opacity: 0.06; }
+  50%       { opacity: 0.12; }
+}
+@keyframes nx-spark {
+  0%, 100% { opacity: 0; transform: scale(0.6); }
+  50%       { opacity: 1; transform: scale(1); }
+}
+
+.nx-card { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), border-color 0.3s, box-shadow 0.4s; }
+.nx-card:hover {
+  transform: translateZ(40px) rotateX(6deg) rotateY(-7deg);
+  border-color: rgba(232, 135, 58, 0.55);
+  box-shadow: 0 34px 60px -30px rgba(232, 135, 58, 0.6);
+}
+
+.nx-program { transition: transform 0.4s cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 0.4s; }
+.nx-program:hover { transform: translateY(-10px) rotateX(7deg); box-shadow: 0 40px 70px -34px rgba(0, 0, 0, 0.95); }
+
+.nx-btn-ghost { transition: border-color 0.25s; }
+.nx-btn-ghost:hover { border-color: rgba(232, 135, 58, 0.7); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}
+
+/* Header: the nav is a plain flex row, which overflowed the viewport on a
+   393px phone -- "Programs" ran off the right edge and the wordmark wrapped.
+   Below 720px the section links drop and the CTA stays; this is a single
+   scrolling page, so nothing becomes unreachable, only un-shortcut.
+
+   The rule that drops them is NOT here any more -- see the one beside
+   .nx-nav-links further down, and the note there for why. */
+@media (max-width: 720px) {
+  .nx-header-inner { padding: 13px 16px !important; gap: 12px !important; }
+  /* Wordmark and CTA at desktop scale still overran 393px once the links were
+     gone. !important because both carry inline styles from their components. */
+  .nx-header-inner a[href="#top"] span { font-size: 15px !important; }
+  .nx-header-inner a[href="#contact"] {
+    padding: 10px 16px !important;
+    font-size: 13.5px;
+  }
+}
+
+/* Below ~400px the wordmark alone is ~209px and still crowded the CTA out. */
+@media (max-width: 400px) {
+  .nx-header-inner a[href="#top"] span { font-size: 13px !important; }
+  .nx-header-inner a[href="#contact"] {
+    padding: 9px 13px !important;
+    font-size: 12.5px;
+  }
+}
+
+.nx-cta-short { display: none; }
+@media (max-width: 400px) {
+  .nx-cta-long { display: none; }
+  .nx-cta-short { display: inline; }
+}
+
+/* The header is transparent now, so its text sits directly on the particle
+   field. A tight shadow keeps it readable over the bright stretches without
+   putting a bar back. */
+.nx-header-inner a { text-shadow: 0 1px 12px rgba(14, 20, 24, 0.9); }
+.nx-header-inner a[href="#contact"] { text-shadow: none; }
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   SECTIONS
+   The lower page is drawn as one survey sheet: index, profile, schedule,
+   graticule. Motion is scroll-anchored and singular -- the assembling layer
+   stack in Approach is the authored moment; everything else is a quiet
+   entrance or a hover state, so the one thing that moves properly still reads.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── Legend strip ─────────────────────────────────────────────────────── */
+.nx-legend {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.nx-legend-track { animation: nx-marquee 34s linear infinite; }
+/* Pause on hover so a label can actually be read, and on focus-within so the
+   same is true for anyone arriving by keyboard. */
+.nx-legend:hover .nx-legend-track,
+.nx-legend:focus-within .nx-legend-track { animation-play-state: paused; }
+
+/* ── Full-window sections ──────────────────────────────────── */
+/* min-height, not height. A section shorter than the window grows to fill it,
+   which is the ask; a section taller than the window keeps its own height
+   rather than clipping its content or growing an inner scrollbar. Contact's
+   form and Programs' schedule both run past a short viewport, and losing the
+   bottom of either is a worse outcome than a section that scrolls.
+
+   svh rather than dvh: dvh changes as mobile browser chrome hides and shows,
+   which would relayout every section mid-scroll. svh is the smaller, stable
+   number, so the section is never taller than what is actually visible. */
+.nx-full {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Content held at the top of the window instead of centred in it. For a
+   section whose content is much shorter than the window -- Skills is ~390px of
+   a 900px frame -- centring buries the title halfway down the screen, so you
+   land on the section and read empty ground first. */
+.nx-full.is-top { justify-content: flex-start; }
+/* Every one of these sections centres its content with `margin: 0 auto`, and
+   an auto cross-axis margin beats align-self: stretch -- so as flex items they
+   collapsed to their content width. Programs' schedule came out 1010px inside
+   a 1240px column. The max-widths still cap them. */
+.nx-full > * { width: 100%; }
+
+/* ── Capabilities: profile cards ──────────────────────────────── */
+.nx-cards { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: clamp(30px, 4vh, 48px); }
+
+/* Seven divides by neither two nor three, so the column count is chosen per
+   breakpoint to land on a whole number of rows with the first card doubled:
+   8 slots over 2 columns, 9 over 3, 8 over 4. No row ends on a hole. */
+@media (min-width: 760px) {
+  .nx-cards { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .nx-cards > :first-child { grid-column: span 2; }
+}
+@media (min-width: 980px) {
+  .nx-cards { grid-template-columns: repeat(3, 1fr); }
+  .nx-cards > :last-child { grid-column: span 2; }
+}
+@media (min-width: 1200px) {
+  .nx-cards { grid-template-columns: repeat(4, 1fr); }
+  /* Back to one column wide: at four across, nine slots would reopen the hole
+     that the three-column arrangement needed it to close. */
+  .nx-cards > :last-child { grid-column: auto; }
+}
+
+.nx-cap {
+  position: relative;
+  display: flex; flex-direction: column; align-items: flex-start;
+  /* The foot is reserved for the ground line, which the copy must clear. */
+  padding: 24px 24px 70px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(165deg, rgba(30, 44, 53, 0.86), rgba(12, 8, 5, 0.92));
+  overflow: hidden;
+  transition:
+    border-color 0.35s ease,
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s ease;
+}
+.nx-cap:hover {
+  border-color: rgba(150, 185, 200, 0.34);
+  transform: translateY(-4px);
+  box-shadow: 0 26px 50px -30px rgba(0, 0, 0, 0.9);
+}
+
+.nx-cap-title {
+  margin: 0;
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(18px, 1.5vw, 21px); line-height: 1.14; letter-spacing: -0.02em;
+  color: var(--text-strong); text-wrap: balance;
+}
+.nx-cap-body {
+  margin: 10px 0 0;
+  font-size: 14.5px; line-height: 1.6;
+  color: var(--muted); text-wrap: pretty; max-width: 46ch;
+}
+/* The section drawn along the foot of the card. */
+.nx-cap-ground {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 74px;
+  display: block; pointer-events: none;
+}
+.nx-cap-area {
+  fill: var(--trace); opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.nx-cap-trace {
+  fill: none;
+  stroke: var(--trace); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.72;
+  /* pathLength="1" on the element, so one unit is the whole line however long
+     the cut happens to be -- no guessing a dasharray per card. */
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  transition: opacity 0.35s ease;
+}
+.nx-cap:hover .nx-cap-trace { opacity: 1; }
+.nx-cap:hover .nx-cap-area { opacity: 0.2; }
+
+@keyframes nx-plot { to { stroke-dashoffset: 0; } }
+@keyframes nx-plot-fill { to { opacity: 0.14; } }
+
+.nx-cards.is-live .nx-cap-trace {
+  animation: nx-plot 1.4s cubic-bezier(0.37, 0, 0.28, 1) forwards;
+  animation-delay: calc(var(--i) * 110ms);
+}
+.nx-cards.is-live .nx-cap-area {
+  animation: nx-plot-fill 0.9s ease forwards;
+  animation-delay: calc(var(--i) * 110ms + 500ms);
+}
+
+/* The card itself arrives with the trace. */
+.nx-cap { opacity: 0; transform: translateY(14px); }
+.nx-cards.is-live .nx-cap {
+  opacity: 1; transform: none;
+  transition:
+    opacity 0.5s ease calc(var(--i) * 70ms),
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 70ms),
+    border-color 0.35s ease,
+    box-shadow 0.45s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* index.css kills every animation globally under this query, which would
+     leave the trace parked at dashoffset 1 -- drawn, but invisible. These are
+     the finished states, applied directly. */
+  .nx-cap { opacity: 1; transform: none; }
+  .nx-cap-trace { stroke-dashoffset: 0; }
+  .nx-cap-area { opacity: 0.14; }
+}
+
+/* ── Skills: the stack as one field of marks ─────────────────────── */
+/* Heading and grid share one measure. At 1240 over a 690px field the headline
+   ran nearly twice the width of everything under it and read as a page banner
+   floating above unrelated content rather than as the top of this section. */
+/* Fills the section so the grid below has free space to centre itself in. */
+.nx-stack-inner {
+  max-width: 980px; margin: 0 auto; text-align: center;
+  flex: 1; display: flex; flex-direction: column;
+}
+
+/* Eyebrow over centred statement: the About section's construction, reused so
+   this reads as part of the page rather than as an import. */
+.nx-stack-eyebrow {
+  margin: 0 0 clamp(16px, 2.4vh, 26px);
+  font-family: var(--mono); font-weight: 500;
+  font-size: clamp(12px, 1.1vw, 13px);
+  letter-spacing: 0.3em; text-indent: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+/* One line, not three. The 16ch cap was forcing it to break; the size is now
+   tied to the viewport so forty-odd characters of condensed bold stay on a
+   single line, and the copy block widens to give them room. Below ~640px it
+   still wraps -- there is no size at which this sentence fits a phone and is
+   also readable -- so `balance` is kept for when it does. */
+.nx-stack-head {
+  margin: 0;
+  font-family: var(--display); font-weight: 700;
+  /* The vw factor is tuned so the line tracks the width of the grid under it
+     rather than drifting narrow at mid sizes: ~830px of text against a 896px
+     field at desktop, and within ~60px of it all the way down to 640. */
+  font-size: clamp(24px, 4.6vw, 48px);
+  line-height: 1.06; letter-spacing: -0.035em;
+  color: var(--text-strong); text-wrap: balance;
+  /* Floor on the gap to the grid. The auto margins below split whatever is
+     left over, and without this they would happily give the grid nothing. */
+  margin-bottom: clamp(30px, 5vh, 64px);
+}
+
+/* Wrapping flex rather than a fixed column count: thirteen tools into six
+   columns leaves a last row of one hanging at the left edge. Centred wrap makes
+   any count land as a deliberate shape. */
+.nx-stack-grid {
+  list-style: none; padding: 0;
+  /* Block auto, inline zero. The heading sits at the top of the section and
+     the grid takes the middle of what remains, rather than hugging the heading
+     with the whole remainder dumped at the bottom. Inline stays 0 so the grid
+     keeps its parent's full width and centres its tiles itself -- an auto
+     inline margin here would cancel the stretch and shrink it to content. */
+  margin: auto 0;
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: clamp(22px, 3vh, 34px) 18px;
+}
+
+/* Fourteen divides exactly by seven, so the field is sized for seven across
+   and comes out 7/7 -- no remainder row at all. Left to a vw-sized tile and a
+   percentage cap the wrap drifted a column across the range, so above this
+   breakpoint the tile, the gap and the field are all fixed and the row count
+   cannot move: seven tiles are 952px, eight would need 1092, the field is 980
+   -- the same 980 the heading is set on, so the two line up edge to edge. */
+@media (min-width: 760px) {
+  .nx-stack-grid { max-width: 980px; gap: 38px 28px; }
+  .nx-tool { width: 112px; }
+}
+
+.nx-tool {
+  width: clamp(88px, 22vw, 104px);
+  display: flex; flex-direction: column; align-items: center; gap: 13px;
+  opacity: 0; transform: translateY(12px) scale(0.94);
+  transition:
+    opacity 0.5s ease calc(var(--i) * 45ms),
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 45ms);
+}
+.nx-stack-grid.is-live .nx-tool { opacity: 1; transform: none; }
+
+/* The slab carries the glow, so the sweep never touches the mark's own
+   transform and the two cannot fight over it. */
+.nx-tool-slab {
+  position: relative;
+  width: clamp(52px, 5.4vw, 66px); height: clamp(52px, 5.4vw, 66px);
+  display: grid; place-items: center;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.022);
+  transition: border-color 0.3s ease, background 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-tool-slab::after {
+  content: ""; position: absolute; inset: -1px;
+  border-radius: inherit; pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--brand, var(--band)) 60%, transparent);
+  box-shadow: 0 0 34px -4px color-mix(in srgb, var(--brand, var(--band)) 70%, transparent);
+  opacity: 0;
+}
+
+/* Held back from full saturation at rest. Thirteen logos at full strength on a
+   warm ground fight both it and each other, and the gap between 80% and 100%
+   is the headroom the hover and the sweep need in order to register at all. */
+.nx-tool-mark {
+  width: 55%; height: 55%;
+  fill: var(--brand, var(--band));
+  opacity: 0.82; filter: saturate(0.82);
+  transition: opacity 0.3s ease, filter 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-tool-mono {
+  font-family: var(--mono); font-size: clamp(11px, 1.15vw, 13px); font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--brand, var(--band));
+  opacity: 0.82;
+  transition: opacity 0.3s ease;
+}
+
+.nx-tool-name {
+  font-family: var(--mono); font-size: 12px; line-height: 1.35;
+  letter-spacing: 0.01em; color: var(--muted-2);
+  text-wrap: balance;
+  transition: color 0.3s ease;
+}
+
+/* After the declarations above, not beside the min-width breakpoint that opens
+   this block -- a media query carries no extra specificity, so written up
+   there it lost every property the plain .nx-tool rules also set, and the
+   tiles stayed at their desktop size. Third time this file has done it. */
+/* Below it, four across rather than two.
+   At the tile's clamped 88px minimum only two fitted a phone's column, which
+   put fourteen tools on seven rows and turned a field that is meant to be read
+   at a glance into a list you scroll. Four columns is the widest that still
+   leaves each name legible at 11px, and it brings the whole stack -- every
+   tool, the heading above it -- inside one screen on any handset taller than
+   about 620px.
+   The width is computed from the row rather than clamped, so the four columns
+   hold exactly at every width instead of drifting to three and back. */
+@media (max-width: 759px) {
+  :root {
+    /* Still clear of the header pill, with the rest of the old clamp given
+       back to the grid. */
+    --nx-skills-pad-t: 88px;
+    --nx-skills-pad-b: 40px;
+  }
+  .nx-stack-grid { gap: 10px 8px; }
+  .nx-tool { width: calc((100% - 24px) / 4); gap: 8px; }
+  .nx-tool-slab { width: 46px; height: 46px; border-radius: 12px; }
+  .nx-tool-name { font-size: 11px; line-height: 1.3; }
+  .nx-tool-mono { font-size: 10px; }
+}
+
+/* The sweep: a diagonal band of light crossing the grid every 7s, each tile
+   carrying its own negative delay.
+ *
+ * The lit window is wide -- a fifth of the cycle rather than a twentieth --
+ * and it lands on a whole diagonal at a time. The first cut lit one tile for
+ * 800ms out of thirteen seconds, which is not a wave, it is a flicker you
+ * catch out of the corner of your eye and wonder if you imagined. */
+@keyframes nx-tool-lit {
+  0%, 74%, 100% { opacity: 0.82; filter: saturate(0.82); transform: none; }
+  80%, 90%      { opacity: 1;    filter: saturate(1.1);  transform: translateY(-5px); }
+}
+@keyframes nx-tool-glow {
+  0%, 74%, 100% { opacity: 0; }
+  80%, 90%      { opacity: 1; }
+}
+/* The slab rises with the mark, so the whole tile moves rather than the logo
+   sliding around inside a stationary box. */
+@keyframes nx-tool-rise {
+  0%, 74%, 100% { transform: none; border-color: rgba(255, 255, 255, 0.07); }
+  80%, 90%      { transform: translateY(-4px); border-color: rgba(255, 255, 255, 0.14); }
+}
+.nx-stack-grid.is-live .nx-tool-mark {
+  animation: nx-tool-lit 7s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+.nx-stack-grid.is-live .nx-tool-slab::after {
+  animation: nx-tool-glow 7s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+.nx-stack-grid.is-live .nx-tool-slab {
+  animation: nx-tool-rise 7s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+.nx-stack-grid.is-live .nx-tool-mono {
+  animation: nx-tool-lit 7s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+/* Pointing at a tile takes it off the clock and pins it. `animation: none`
+   rather than a paused state -- pausing would freeze whatever the sweep
+   happened to be showing at that instant. */
+.nx-tool:hover .nx-tool-mark,
+.nx-stack-grid.is-live .nx-tool:hover .nx-tool-mark {
+  animation: none;
+  opacity: 1; filter: saturate(1); transform: scale(1.06);
+}
+.nx-stack-grid.is-live .nx-tool:hover .nx-tool-slab::after { animation: none; opacity: 1; }
+.nx-tool:hover .nx-tool-slab,
+.nx-stack-grid.is-live .nx-tool:hover .nx-tool-slab {
+  animation: none;
+  transform: translateY(-6px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.nx-stack-grid.is-live .nx-tool:hover .nx-tool-mono { animation: none; opacity: 1; }
+.nx-tool:hover .nx-tool-name { color: var(--text-strong); }
+.nx-tool:hover .nx-tool-mono { opacity: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* index.css kills every animation under this query, which would leave the
+     tiles parked at opacity 0 -- present but invisible. These are the finished
+     states, applied directly; the hover keeps working. */
+  .nx-tool { opacity: 1; transform: none; transition: none; }
+  .nx-tool-mark, .nx-tool-mono { opacity: 0.9; filter: saturate(0.9); transform: none; }
+  .nx-tool-slab { transform: none; }
+  /* The global kill at the top of this file is `* { animation: none }`, and the
+     universal selector does not match pseudo-elements -- so the glow carried on
+     sweeping under reduced motion while everything it was attached to stood
+     still. It has to be named, and named at the specificity that started it:
+     a bare `.nx-tool-slab::after` loses to `.nx-stack-grid.is-live ...`. */
+  .nx-stack-grid.is-live .nx-tool-slab::after { animation: none; opacity: 0; }
+}
+
+/* ── Contact: let's connect ──────────────────────────────────── */
+.nx-connect { justify-content: center; }
+
+/* Dimmed at the centre, where the shader is brightest and the type sits. A
+   flat scrim over the whole panel would just take the field back out. */
+.nx-connect-scrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(
+    120% 80% at 50% 50%,
+    rgba(14, 20, 24, 0.82) 0%,
+    rgba(14, 20, 24, 0.55) 42%,
+    rgba(14, 20, 24, 0.15) 78%,
+    transparent 100%
+  );
+}
+
+.nx-connect-inner {
+  position: relative;
+  max-width: 1100px; margin: 0 auto;
+  text-align: center;
+}
+
+.nx-connect-head {
+  margin: 0;
+  font-family: var(--display); font-weight: 700;
+  /* Big and wide-tracked, like the page it is borrowed from. Tracking is
+     positive here where every other heading on this site is negative -- that
+     is the whole difference between a headline and a sign-off. */
+  font-size: clamp(44px, 9.5vw, 132px);
+  line-height: 0.95; letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-strong);
+  text-wrap: balance;
+}
+
+.nx-connect-address {
+  margin: clamp(26px, 4vh, 48px) auto 0;
+  max-width: 46ch;
+  display: flex; flex-direction: column; gap: 6px;
+  font-style: normal;
+  font-size: clamp(14.5px, 1.2vw, 17px);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.nx-connect-actions {
+  margin-top: clamp(30px, 4.6vh, 56px);
+  display: flex; flex-wrap: wrap; gap: 18px; justify-content: center;
+}
+
+.nx-connect-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: clamp(180px, 20vw, 232px);
+  padding: 18px 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(150, 185, 200, 0.38);
+  background: rgba(14, 20, 24, 0.35);
+  backdrop-filter: blur(2px);
+  font-family: var(--display); font-weight: 600;
+  font-size: clamp(14px, 1.15vw, 17px);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-strong);
+  transition: background 0.3s ease, border-color 0.3s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-connect-btn:hover {
+  background: rgba(232, 135, 58, 0.14);
+  border-color: rgba(150, 185, 200, 0.8);
+  color: var(--text-strong);
+  transform: translateY(-2px);
+}
+.nx-connect-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* The label leaves upward and the address arrives from below, both clipped by
+   the pill -- the construction on nexiraspatial.com's own contact buttons.
+   Two things make it work rather than merely swap: the outgoing label travels
+   further than the incoming value (so they are never both mid-frame in the
+   same place), and the value is set in the address's own case and tracking
+   rather than the label's 0.14em uppercase, which at 22 characters would not
+   fit the pill at any size worth reading.
+
+   The value comes from data-reveal via attr(), so the markup states it once
+   and the styling never has to know what it says. Generated content is not
+   announced by screen readers, which is what we want here: the accessible name
+   stays "Email us", the action, not a string of punctuation. */
+.nx-connect-btn { position: relative; overflow: hidden; }
+
+.nx-connect-btn-label {
+  display: block;
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.24s ease;
+}
+
+.nx-connect-btn::after {
+  content: attr(data-reveal);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+  font-family: var(--body);
+  font-weight: 500;
+  font-size: clamp(12.5px, 1.05vw, 15px);
+  letter-spacing: 0.01em;
+  text-transform: none;
+  white-space: nowrap;
+  /* Starts a full pill-height below, so it is genuinely outside the clip
+     rather than sitting under the label at low opacity. */
+  transform: translateY(100%);
+  opacity: 0;
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.24s ease;
+}
+
+.nx-connect-btn:hover .nx-connect-btn-label,
+.nx-connect-btn:focus-visible .nx-connect-btn-label {
+  transform: translateY(-130%);
+  opacity: 0;
+}
+.nx-connect-btn:hover::after,
+.nx-connect-btn:focus-visible::after {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-connect-btn { transition: background 0.3s ease, border-color 0.3s ease; }
+  .nx-connect-btn:hover { transform: none; }
+  /* The swap stays -- it is information, not decoration -- but it crossfades
+     in place instead of sliding. */
+  .nx-connect-btn-label,
+  .nx-connect-btn::after { transition: opacity 0.24s ease; transform: none; }
+  .nx-connect-btn:hover .nx-connect-btn-label,
+  .nx-connect-btn:focus-visible .nx-connect-btn-label { transform: none; }
+  .nx-connect-btn:hover::after,
+  .nx-connect-btn:focus-visible::after { transform: none; }
+}
+
+/* ── Hero mark: the two halves drifting ───────────────────────────────────
+   The transforms are written per frame by the loop in Hero3D, because the two
+   halves run on different curves and each carries an arc that has to be
+   evaluated rather than interpolated between keyframes.
+
+   The travel is deliberately small -- a few viewport units and a hair of
+   scale. An earlier pass moved them 16 and 18vw and shrank them to 0.46, and
+   the mark ended up performing: two words flying apart is a bigger gesture
+   than a wordmark should make while the subject of the shot is a machine
+   swinging toward the camera. The reveal is the laptop's job. The type only
+   has to get out of its way and dim. */
+.nx-hero-word {
+  display: inline-block;
+  transform-origin: center center;
+}
+
+/* ── Spin badge ───────────────────────────────────────────────────────────
+   The ring naming the parent company. Set in the mono, because it is a label
+   rather than a heading, and outlined nowhere -- the hero's wordmark owns the
+   outline treatment and a second one would compete with it. */
+.nx-spin {
+  position: relative;
+  width: var(--nx-spin-size);
+  height: var(--nx-spin-size);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.35s ease;
+}
+.nx-spin:hover { color: var(--text); }
+.nx-spin:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+
+.nx-spin-ring {
+  position: absolute;
+  inset: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  /* The letters are placed from the centre, so the ring must have one. */
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.nx-spin-hub {
+  font-size: 15px;
+  line-height: 1;
+  color: var(--accent);
+  transition: transform 0.35s cubic-bezier(.16, 1, .3, 1);
+}
+.nx-spin:hover .nx-spin-hub { transform: translate(2px, -2px); }
+
+/* Where it sits: centred over the final X of INTELLIX, above the wordmark's
+   band and clear of the nav. Absolute against the sticky panel, so it holds
+   that spot for the whole opening rather than scrolling out of it.
+
+   The X's position is not measured at runtime, it is solved. The line is one
+   nowrap flex row -- centred, then pushed 4.2vw right, with an 18vw gap -- so
+   the distance from the right edge of the window to the letter's centre works
+   out as (50 - 4.2 - 9)vw minus a constant number of ems of the set line, and
+   that em constant measures 1.741 against this face. Hence 36.8vw - 1.741 x
+   the font size. Solved rather than measured, it holds at every width without
+   a resize listener, including past 2079px where the clamp caps the type and a
+   plain vw offset would start drifting off the letter.
+
+   1.741, not the 1.783 the DOM reports. A Range rect around the last character
+   is its ADVANCE box, and letter-spacing is added after every character
+   including the last, so at 0.08em the box carries a trailing space half of
+   which throws the centre 0.042em to the right -- ten pixels at this size,
+   which is exactly enough to see. The number here is against the ink, read off
+   the rendered pixels rather than off the box: the letter, not its slot.
+
+   Vertically it hangs off the wordmark rather than off the viewport. The mark
+   is centred in the panel and the cap line sits 0.424em above that centre --
+   also measured off the ink, since a text node's box is the font's full ascent
+   and an all-caps line uses almost none of it. A further 0.2em of air puts the
+   badge just above the letter and keeps it there at every window height, where
+   the vh offset it replaces drifted between 57 and 116 pixels of gap.
+
+   The slot's right edge is put on the letter's centre and the box then shifted
+   back by half its own width, so the badge's diameter never has to appear
+   here; anchoring the bottom rather than the top does the same for its
+   height. */
+.nx-spin-slot {
+  position: absolute;
+  /* min(), not the bare expression: on a short window the wordmark sits high
+     enough that a gap measured off it would put the badge under the nav. The
+     second term is the floor -- 96px of clearance and the badge's own height
+     -- and it only ever wins below about 720px tall. */
+  bottom: min(
+    calc(50vh + 0.624 * var(--nx-hero-fs)),
+    calc(100vh - 96px - var(--nx-spin-size))
+  );
+  right: calc(36.8vw - 1.741 * var(--nx-hero-fs));
+  transform: translateX(50%);
+  z-index: 4;
+}
+
+@media (max-width: 900px) {
+  /* On a phone the wordmark and the machine already fill the frame; the badge
+     drops to a corner small enough to stay out of both. It gives up the X
+     alignment, but barely: at 393px the corner already puts it within ten
+     pixels of that letter's centre, and holding the alignment exactly would
+     leave under 7px of margin at the frame's edge. This transform also
+     replaces the desktop rule's translateX, which is why the offset above is
+     the plain corner one -- and `bottom: auto`, because top and bottom both
+     set on an auto-height absolute box stretches it instead of placing it.
+
+     The vertical offset is tied to the machine, not to a pixel floor. The
+     camera has a fixed FOV, so the lid's top edge lands at a near-constant
+     share of the viewport HEIGHT -- measured off the render at 26 to 30
+     percent across every handset size. A clamp()ed pixel offset could not
+     track that: its 84px floor stopped the badge rising on a short screen
+     while the lid kept climbing, and at 386x621 the two met, which is the ring
+     sitting on the display. Anchoring the badge's own bottom just above 24vh
+     keeps the gap proportional instead.
+
+     The floor is only the frame's own edge, not the nav's. On a phone the two
+     never share the screen: the bar is still fully transparent at 45% of the
+     way through the hero and does not reach full opacity until 70%, while the
+     badge has finished fading out by 36% of the fly-in. Measured, not assumed
+     -- and it is what buys the badge enough room to stay on a short handset
+     instead of being dropped. The safe-area inset keeps it off a notch when
+     the page is running without browser chrome. */
+  :root {
+    /* A smaller ring, and NOT by scaling one down. transform: scale() shrinks
+       the type with the circle, so every step down cost legibility: 0.72 put
+       the ring's letters at 7.6px, 0.82 bought them back but the badge then
+       took a third of the width of a 388px screen. Sized rather than scaled,
+       the circle comes down to 92px while the letters go UP to 10px -- the
+       ring gets smaller and easier to read at the same time. What makes that
+       possible is dropping to one lap of the text on this side of the
+       breakpoint; see SpinBadge.jsx. */
+    --nx-spin-size: 92px;
+
+    /* Bigger, not smaller, now that the camera stands further back on a narrow
+       frame and the machine has stopped filling it edge to edge. At 12.6vw the
+       mark set 49px on a 388px screen -- correct when it had to thread between
+       the two edges of a laptop that overran the viewport, and needlessly
+       timid once that laptop is 64% of the width. */
+    --nx-hero-fs: clamp(52px, 16vw, 96px);
+
+    /* See the note beside the h1's transform in Hero3D.jsx. */
+    --nx-hero-nudge: 0px;
+  }
+
+  .nx-spin-slot {
+    top: max(
+      calc(20px + env(safe-area-inset-top, 0px)),
+      calc(24vh - var(--nx-spin-size) - 8px)
+    );
+    bottom: auto;
+    right: 16px;
+    /* No scale left to apply -- but the desktop rule's translateX has to go,
+       or the badge sits half a diameter off the right edge. */
+    transform: none;
+  }
+  .nx-spin-ring { font-size: 10px; letter-spacing: 0.04em; }
+}
+
+/* ── Approach: the layered planes ─────────────────────────────────────────
+   Base values are the ones that were inline; the breakpoint is the new part.
+   Below 900px the section's grid has collapsed to one column, so the planes no
+   longer sit beside the steps -- they sit under them, in a column as narrow as
+   the cards, and the projection has nowhere to go. Smaller, and given a box
+   tall enough to contain what it paints, so it stops overlapping the last card
+   and stops running off the sides. */
+.nx-stack-art {
+  display: grid;
+  place-items: center;
+  perspective: 1200px;
+  min-height: clamp(340px, 46vh, 480px);
+}
+.nx-stack-art-planes { width: min(84%, 360px); height: clamp(300px, 40vh, 400px); }
+
+.nx-stack-steps { margin-top: 30px; display: grid; gap: 12px; }
+
+/* ── Approach: step rows ──────────────────────────────────────────────── */
+.nx-step {
+  display: flex; gap: 18px; padding: 18px 20px; border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  transition: border-color 0.35s ease, background 0.35s ease;
+}
+/* No transform on either state, and that is the point.
+   The active row carried translateX(7px), which pushed the one row meant to
+   stand out off the left edge the other three share -- the state was being
+   signalled by breaking the alignment. Border and tint already say it, and
+   they say it without moving anything.
+   Hover had a 5px shift for the same reason and lost it for a different one:
+   these rows are plain divs with no handler, so a row that slides under the
+   cursor promises a click that does not exist. */
+.nx-step:hover { border-color: rgba(232, 135, 58, 0.45); }
+.nx-step.is-on {
+  border-color: color-mix(in srgb, var(--step) 62%, transparent);
+  background: color-mix(in srgb, var(--step) 11%, rgba(255, 255, 255, 0.02));
+}
+.nx-step-n {
+  flex: none; font-family: var(--mono); font-size: 12px;
+  color: var(--step); padding-top: 3px;
+}
+.nx-step-title { font-family: var(--display); font-weight: 700; font-size: 18.5px; color: var(--text-strong); }
+.nx-step-body { margin-top: 6px; font-size: 14.5px; line-height: 1.58; color: var(--muted-2); text-wrap: pretty; }
+
+/* These two blocks sit AFTER the declarations above, not beside the section's
+   other breakpoints further up the file, and it matters: a media query adds no
+   specificity, so written above the plain .nx-step rules they lost every
+   declaration the two had in common and the cards never got smaller. */
+@media (max-width: 900px) {
+  /* The planes go. Below this the grid is one column, so they sat under the
+     steps rather than beside them -- and a fan that paints 1.8x its own width
+     has nowhere to go in a column as narrow as the cards. Fitted to that
+     column it was legible but pointless: a diagram of four layers, printed
+     smaller than the four rows that had just said the same thing, half a
+     screen further down where nothing connects the two.
+     
+     What it was for is the relationship between the steps, and on a phone that
+     relationship is better carried by the rows themselves being visible at
+     once. Hence the rest of this block. */
+  .nx-stack-art { display: none; }
+
+  /* All four steps in one screen, which is what makes them read as a sequence
+     rather than four things you scroll past one at a time. The room comes off
+     the padding and the leading, not off the copy: every word still shows, and
+     the rows keep the alignment the wide layout gives them. */
+  :root { --nx-sec-pad: 44px; }
+  .nx-stack-steps { margin-top: 18px; gap: 8px; }
+  .nx-step { gap: 12px; padding: 12px 14px; border-radius: 13px; }
+  .nx-step-n { font-size: 11px; padding-top: 2px; }
+  .nx-step-title { font-size: 16px; }
+  .nx-step-body { margin-top: 3px; font-size: 13px; line-height: 1.45; }
+}
+
+/* Under 400px the body copy wraps to three lines instead of two, which puts
+   the four rows back over a screen's worth on a short handset. The last of the
+   room comes from the leading rather than from the words -- 12.5px is still
+   above the floor the rest of the page keeps. */
+@media (max-width: 400px) {
+  .nx-stack-steps { gap: 6px; }
+  .nx-step { padding: 10px 12px; }
+  .nx-step-body { font-size: 12.5px; line-height: 1.4; }
+}
+
+
+/* ── Programs: schedule profile ───────────────────────────────────────── */
+.nx-sched { border-top: 1px solid rgba(255, 255, 255, 0.09); }
+.nx-sched-axis { padding: 12px 0 6px; }
+.nx-sched-axis-inner {
+  position: relative; height: 18px;
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #66787F;
+}
+.nx-sched-tick { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.nx-sched-tick:first-child { transform: none; }
+.nx-sched-tick i { display: block; width: 1px; height: 6px; margin: 0 auto 4px; background: rgba(255, 255, 255, 0.22); }
+.nx-sched-tick:first-child i { margin-left: 0; }
+
+.nx-sched-row {
+  display: grid; grid-template-columns: 1fr; gap: 14px;
+  padding: 24px 4px; border-top: 1px solid rgba(255, 255, 255, 0.07);
+  text-decoration: none; color: inherit;
+  transition: background 0.3s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nx-sched-row:hover { background: rgba(255, 255, 255, 0.022); transform: translateX(9px); }
+.nx-sched-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 12px; }
+
+.nx-sched-track {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--accent);
+}
+.nx-sched-name {
+  margin: 10px 0 0; font-family: var(--display); font-weight: 700;
+  font-size: clamp(19px, 1.9vw, 23px); line-height: 1.14; letter-spacing: -0.022em;
+  color: var(--text-strong); text-wrap: balance;
+}
+.nx-sched-desc { margin: 8px 0 0; font-size: 14.5px; line-height: 1.6; color: var(--muted-2); max-width: 46ch; text-wrap: pretty; }
+
+.nx-sched-plot { position: relative; display: flex; align-items: center; min-height: 34px; }
+.nx-sched-plot::before {
+  content: ""; position: absolute; inset-inline: 0; height: 2px; border-radius: 2px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.nx-sched-bar {
+  position: relative; height: 8px; border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent), var(--accent));
+  box-shadow: 0 0 22px -4px var(--accent);
+  /* Deliberately animates width, which the detector flags. scaleX would be
+     composited but distorts the week count sitting inside the bar, and this
+     fires once per bar on reveal rather than on hover or scroll -- four
+     elements, one 0.85s pass. The layout cost is real and it is bounded. */
+  transition: width 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex; align-items: center;
+}
+.nx-sched-weeks {
+  position: absolute; left: calc(100% + 12px); white-space: nowrap;
+  font-family: var(--mono); font-size: 12px; color: var(--text);
+}
+.nx-sched-mode {
+  display: flex; align-items: center; gap: 16px; justify-content: space-between;
+  font-family: var(--mono); font-size: 12px; color: var(--muted-2);
+}
+.nx-sched-go { color: var(--accent); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.nx-sched-row:hover .nx-sched-go { transform: translateX(5px); }
+
+@media (min-width: 860px) {
+  .nx-sched-row { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 190px; gap: 32px; align-items: center; }
+  .nx-sched-axis-inner { margin-left: calc((100% + 32px) * 0.535); }
+  .nx-sched-mode { flex-direction: column; align-items: flex-end; gap: 10px; }
+}
+
+/* ── Contact ──────────────────────────────────────────────────────────── */
+.nx-graticule {
+  position: absolute; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 86px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.045) 0 1px, transparent 1px 86px);
+  -webkit-mask-image: radial-gradient(ellipse 78% 66% at 50% 42%, #000 12%, transparent 78%);
+  mask-image: radial-gradient(ellipse 78% 66% at 50% 42%, #000 12%, transparent 78%);
+}
+
+.nx-form-shell {
+  margin-top: 40px; padding: clamp(22px, 3vw, 36px);
+  border-radius: 26px; border: 1px solid rgba(255, 255, 255, 0.09);
+  background: linear-gradient(165deg, rgba(26, 19, 12, 0.78), rgba(11, 8, 5, 0.86));
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95);
+}
+.nx-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 6px 16px; }
+.nx-span { grid-column: 1 / -1; }
+
+.nx-field { display: flex; flex-direction: column; }
+.nx-field label {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.nx-req { color: var(--a-4); }
+.nx-field input, .nx-field select, .nx-field textarea {
+  width: 100%; padding: 15px 17px; border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text); font-size: 15px; font-family: inherit;
+  transition: border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+.nx-field textarea { resize: vertical; min-height: 108px; }
+.nx-field select { appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 21px) 22px, calc(100% - 15px) 22px;
+  background-size: 6px 6px, 6px 6px; background-repeat: no-repeat;
+}
+.nx-field select option { background: #151F26; color: var(--text); }
+.nx-field input:focus, .nx-field select:focus, .nx-field textarea:focus {
+  outline: none; border-color: rgba(232, 135, 58, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(232, 135, 58, 0.16);
+}
+.nx-field[data-invalid] input, .nx-field[data-invalid] textarea { border-color: rgba(232, 135, 58, 0.85); }
+.nx-field-msg { margin: 7px 0 12px; min-height: 1.15em; font-size: 12.5px; line-height: 1.45; color: var(--muted-2); }
+.nx-field[data-invalid] .nx-field-msg { color: #FFB98C; }
+
+.nx-submit {
+  margin-top: 10px; padding: 17px; border-radius: 14px; border: none;
+  background: linear-gradient(100deg, var(--a-5), var(--a-7));
+  color: var(--ink); font-weight: 600; font-size: 16px; font-family: inherit; cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, filter 0.25s ease;
+}
+.nx-submit:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -12px rgba(232, 135, 58, 0.72); }
+.nx-submit:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.nx-submit:disabled { filter: saturate(0.45) brightness(0.8); cursor: progress; transform: none; box-shadow: none; }
+
+.nx-sent { text-align: center; padding: 26px 12px 30px; }
+.nx-sent-mark {
+  display: grid; place-items: center; width: 52px; height: 52px; margin: 0 auto;
+  border-radius: 50%; color: var(--ink);
+  background: linear-gradient(140deg, var(--a-6), var(--a-8));
+  animation: nx-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.nx-sent h3 { margin: 18px 0 0; font-family: var(--display); font-weight: 700; font-size: 24px; color: var(--text-strong); }
+.nx-sent p { margin: 10px auto 0; max-width: 40ch; font-size: 15px; line-height: 1.6; color: var(--muted); }
+@keyframes nx-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+.nx-foot-nav { display: flex; gap: 14px 26px; flex-wrap: wrap; font-size: 14.5px; align-items: center; }
+.nx-foot-nav a { color: var(--muted-2); transition: color 0.22s ease; }
+
+/* A finger is about 9mm across; these links were 19px tall, which is the
+   height of their own text and nothing else. Padded rather than enlarged, so
+   the footer still reads at the same size -- the hit area grows, the type does
+   not. The row gap comes down by the same amount the padding adds, so the
+   rhythm of the block is unchanged and no two targets overlap.
+   Keyed off the pointer, not the width: a touchscreen laptop needs this and a
+   narrow desktop window does not. */
+@media (pointer: coarse) {
+  .nx-foot-nav { gap: 2px 26px; }
+  .nx-foot-nav a { display: inline-block; padding: 11px 0; }
+  .nx-about-facts dd a { display: inline-block; padding: 10px 0; }
+  .nx-head-mark { padding: 10px 0; margin: -10px 0; }
+  /* The header links survive to 720px, which on a tablet held upright means a
+     finger is aiming at 17px of text. The travelling pill is placed by
+     translateX and width only, so a taller link box does not move it. */
+  .nx-nav-link { padding: 11px 0; }
+}
+.nx-foot-nav a:hover { color: var(--text-strong); }
+.nx-foot-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+/* ── Browser surfaces ─────────────────────────────────────────────────
+   The parts nobody draws still carry the design: selection, caret and the
+   scrollbar all ship with defaults that belong to no design system. */
+::selection { background: rgba(232, 135, 58, 0.4); color: #fff; }
+:root { color-scheme: dark; accent-color: #C9722C; caret-color: var(--accent); }
+* { scrollbar-color: rgba(232, 135, 58, 0.45) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(232, 135, 58, 0.4); border-radius: 99px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(232, 135, 58, 0.7); background-clip: content-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-legend-track { animation: none; }
+  .nx-sched-bar { transition: none; }
+}
+
+
+/* ── Section fixes, from the first inspection round ───────────────────── */
+
+/* The axis was positioned with a magic margin and did not line up with the
+   bars it labels -- a scale that is off by 120px is worse than no scale.
+   Same grid template as the rows, so the ticks sit in the plot column by
+   construction rather than by arithmetic. */
+@media (min-width: 860px) {
+  .nx-sched-axis {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 190px;
+    gap: 32px;
+  }
+  .nx-sched-axis-inner { grid-column: 2; margin-left: 0; }
+}
+
+/* The week count sat outside the bar, so the 12-week row -- the one that fills
+   the track -- pushed its own label off the screen edge on mobile. Inside the
+   bar it cannot overflow, and a block tall enough to hold a number reads more
+   like a schedule than a progress meter did. */
+.nx-sched-bar {
+  height: 26px;
+  border-radius: 8px;
+  justify-content: flex-end;
+  padding-right: 10px;
+  min-width: 74px;
+}
+.nx-sched-plot::before { height: 26px; border-radius: 8px; }
+.nx-sched-weeks {
+  position: static;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0E1418;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ABOUT — scroll-scrubbed statement
+   The whole reveal is driven by one custom property (--reveal, written to
+   the section node once per scroll frame) plus each word's own --i. No word
+   is animated individually and nothing re-renders; CSS does the arithmetic.
+   ══════════════════════════════════════════════════════════════════════ */
+.nx-about {
+  --reveal: 0;
+  position: relative;
+  padding: clamp(74px, 11vh, 132px) 28px clamp(84px, 12vh, 150px);
+  border-top: 1px solid var(--hairline);
+  overflow: clip;
+}
+.nx-about-bg { position: absolute; inset: 0; pointer-events: none; }
+.nx-about-inner { position: relative; max-width: 1000px; margin: 0 auto; text-align: center; }
+
+/* Heading. Set in the mono face at small size against the display statement
+   below it: the size jump is what separates a label from the sentence it
+   labels, so the two never compete for the same read. */
+.nx-about-head {
+  margin: 0 0 clamp(30px, 4.2vh, 52px);
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-weight: 500;
+  /* Was 11-13px, which read as a caption rather than a heading. At 15-20px it
+     holds the top of the section without approaching the statement's ~52px --
+     the gap between them is what keeps the two from competing. Tracking eases
+     off slightly as the size grows; 0.34em at 20px is too airy to read as a
+     single word. */
+  font-size: clamp(15px, 1.7vw, 20px);
+  letter-spacing: 0.28em;
+  text-indent: 0.28em; /* centres optically -- trailing tracking offsets it left */
+  text-transform: uppercase;
+  color: var(--accent, #E8873A);
+}
+
+/* The statement. Words sit at a readable floor rather than invisible: a word
+   at opacity 0 is a hole in a sentence, and the effect is illumination, not
+   assembly -- you should be able to read the whole line before it lights. */
+.nx-about-say {
+  margin: 0;
+  font-family: var(--display, 'Syne', sans-serif);
+  font-weight: 700;
+  font-size: clamp(26px, 4.1vw, 52px);
+  line-height: 1.16;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  color: transparent;
+}
+.nx-about-say span {
+  /* Each word lights when the running head (--reveal * --n) passes its index.
+     The 2.2 multiplier gives a short ramp so words resolve crisply instead of
+     the whole line brightening together. */
+  color: color-mix(
+    in srgb,
+    var(--text-strong) calc(clamp(0, (var(--reveal) * var(--n) - var(--i)) * 2.2, 1) * 100%),
+    rgba(255, 255, 255, 0.17)
+  );
+  transition: color 0.18s linear;
+}
+
+.nx-about-facts {
+  margin: clamp(44px, 6vh, 72px) 0 0;
+  text-align: center;
+}
+.nx-about-facts dt {
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  /* 10.5px is under what a phone can comfortably resolve. Mono uppercase at
+     0.15em of tracking reads larger than its measured size, which is why it
+     looked fine on a desktop -- but only just, and not on a handset. */
+  font-size: 11.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+.nx-about-facts dd {
+  margin: 9px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.nx-about-facts a { color: var(--accent, #E8873A); }
+.nx-about-facts a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.nx-sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-about-say span { transition: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   INVERSION — the aperture
+   Two identical copies of one statement in exact register: the base on the
+   page's own dark ground, and an inverted duplicate clipped to a circle. The
+   register is the effect, so both copies share every layout property and only
+   the ground and ink differ.
+   ══════════════════════════════════════════════════════════════════════ */
+.nx-invert {
+  position: relative;
+  height: 215vh;
+  border-top: 1px solid var(--hairline);
+}
+.nx-invert-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.nx-invert-base,
+.nx-invert-panel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0 clamp(22px, 8vw, 110px);
+}
+.nx-invert-base { background: var(--ink); }
+.nx-invert-panel {
+  /* The site's own tokens, swapped. An arbitrary white would read as a
+     different site showing through rather than as this one inverted. */
+  background: var(--text-strong);
+  clip-path: circle(0 at 50% 128%);
+  will-change: clip-path;
+}
+
+.nx-invert-copy { max-width: min(92vw, 1080px); text-align: center; }
+.nx-invert-head {
+  margin: 0 auto;
+  max-width: 15ch;
+  font-family: var(--display, 'Syne', sans-serif);
+  font-weight: 800;
+  font-size: clamp(34px, 6.4vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.nx-invert-sub {
+  margin: clamp(18px, 2.6vh, 30px) auto 0;
+  max-width: 46ch;
+  font-size: clamp(15px, 1.35vw, 18px);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+.nx-invert-base .nx-invert-head { color: var(--text-strong); }
+.nx-invert-base .nx-invert-sub { color: var(--muted); }
+.nx-invert-panel .nx-invert-head { color: var(--ink); }
+.nx-invert-panel .nx-invert-sub { color: #5B4C3F; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-invert { height: 100vh; }
+  .nx-invert-panel { will-change: auto; }
+}
+
+/* Header under the aperture.
+   While the circle covers the top of the frame the header inverts with it, so
+   the white runs edge to edge instead of being cut by a dark bar. Everything
+   here transitions, because the flag itself flips at a threshold and an
+   un-eased switch would read as a flicker. */
+.nx-head-glass { transition: opacity 0.4s ease; }
+.nx-header-inner a,
+.nx-header-inner a span { transition: color 0.3s ease, background 0.3s ease; }
+
+html.nx-inverted .nx-head-glass { opacity: 0 !important; }
+html.nx-inverted .nx-header-inner::before { opacity: 0 !important; }
+html.nx-inverted .nx-header-inner a {
+  color: var(--ink) !important;
+  text-shadow: none !important;
+}
+/* The wordmark keeps its accent half -- that is brand, not chrome -- but the
+   other half has to flip or it disappears into the white. */
+html.nx-inverted .nx-header-inner a[href="#top"] > span > span:first-child,
+html.nx-inverted .nx-header-inner a[href="#top"] { color: var(--ink) !important; }
+html.nx-inverted .nx-header-inner a[href="#contact"] {
+  background: var(--ink) !important;
+  color: var(--text-strong) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   HEADER — full-width bar → compact island
+   Width is set in pixels from JS and only transitioned here: `fit-content`
+   is not an interpolable value, so animating to it snapped. The label/links
+   swap uses position + opacity rather than display, for the same reason —
+   `display` has no midpoint either.
+   ══════════════════════════════════════════════════════════════════════ */
+.nx-header-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 36px;
+  border-radius: 0;
+  transition:
+    width 0.62s cubic-bezier(0.22, 1, 0.28, 1),
+    padding 0.62s cubic-bezier(0.22, 1, 0.28, 1),
+    margin-top 0.62s cubic-bezier(0.22, 1, 0.28, 1),
+    gap 0.62s cubic-bezier(0.22, 1, 0.28, 1),
+    border-radius 0.5s ease;
+}
+/* The island's surface. A pseudo-element so it needs no node and its opacity
+   can ride --island directly, the same signal that drives the geometry. */
+.nx-header-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(14, 20, 24, 0.74);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 18px 44px -22px rgba(0, 0, 0, 0.92);
+  opacity: var(--island, 0);
+  transition: opacity 0.45s ease;
+  pointer-events: none;
+}
+.nx-header-inner[data-island] {
+  max-width: calc(100% - 32px);
+  margin-top: 12px;
+  padding: 9px 9px 9px 22px;
+  border-radius: 999px;
+  gap: 18px;
+}
+
+.nx-head-mark { position: relative; z-index: 1; flex: none; }
+
+.nx-nav {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 1.7vw, 28px);
+  font-size: clamp(13px, 1.35vw, 14.5px);
+}
+
+/* One slot, two occupants. The hidden one goes out of flow, not out of the
+   document, so it fades instead of popping and the slot still measures to
+   whichever is showing. */
+.nx-nav-swap { position: relative; display: inline-flex; align-items: center; }
+.nx-nav-current,
+.nx-nav-links { transition: opacity 0.3s ease; }
+
+.nx-nav-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+  color: #fff;
+  font-weight: 500;
+  opacity: 0;
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+.nx-nav-current i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+  flex: none;
+}
+
+.nx-nav-links {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(12px, 1.7vw, 28px);
+}
+
+/* Below 720px the section links drop; the wordmark and the CTA stay.
+   This has to sit AFTER the rule above, not beside its sibling breakpoints a
+   thousand lines up where it was written. A media query adds no specificity,
+   so the plain .nx-nav-links declaration here was quietly winning every time
+   and the links were still on screen at 393px -- four of them, squeezing the
+   CTA until only a sliver of it was left at the right edge. The island form
+   hid them by other means, which is why this went unseen: it only showed in
+   the stretch where the bar is still full width. */
+@media (max-width: 720px) {
+  .nx-nav-links { display: none; }
+}
+
+/* Collapsed island: label in flow, links out of it. */
+.nx-header-inner[data-island]:not([data-expanded]) .nx-nav-current {
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
+}
+.nx-header-inner[data-island]:not([data-expanded]) .nx-nav-links {
+  position: absolute;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* The travelling indicator. translateX is composited; width changes only when
+   the active section does -- four times down the page, on one element. */
+.nx-nav-pill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: 32px;
+  margin-top: -16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease;
+}
+
+.nx-nav-link {
+  position: relative;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 0.25s ease;
+}
+.nx-nav-link:hover { color: rgba(255, 255, 255, 0.96); }
+.nx-nav-link[aria-current] { color: #fff; }
+.nx-nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
+
+.nx-head-cta {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, var(--a-5), var(--a-6));
+  color: var(--ink);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.nx-head-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -10px rgba(232, 135, 58, 0.8); }
+.nx-head-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* Under the aperture the island inverts with everything else. */
+html.nx-inverted .nx-nav-pill {
+  background: rgba(14, 20, 24, 0.10);
+  border-color: rgba(14, 20, 24, 0.14);
+}
+html.nx-inverted .nx-nav-link { color: rgba(14, 20, 24, 0.66) !important; }
+html.nx-inverted .nx-nav-link[aria-current] { color: var(--ink) !important; }
+html.nx-inverted .nx-nav-current { color: var(--ink) !important; }
+
+@media (max-width: 720px) {
+  .nx-header-inner[data-island] { padding: 8px 8px 8px 16px; margin-top: 8px; gap: 12px; }
+  /* No room for a section label beside the wordmark and the CTA at this width. */
+  .nx-header-inner[data-island] .nx-nav-current { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-header-inner, .nx-nav-pill, .nx-nav-current, .nx-nav-links { transition: none; }
+}
