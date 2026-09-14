@@ -9,6 +9,15 @@ const LINKS = [
   { id: "skills", label: "Skills" },
 ];
 
+/* What the scroll spy can name, which is more than the nav links to. Contact
+   has no link -- the CTA is its way in -- but the section label still has to
+   say where you are once you reach it, or it goes on reading "Skills" through
+   the whole of the contact section. On phones that label is the only nav. */
+const SPY = [...LINKS, { id: "contact", label: "Contact" }];
+
+/* Shown before the first section is reached: the hero and its panels. */
+const TOP_LABEL = "Overview";
+
 /**
  * Full-width bar over the hero; a compact island once you are into the page,
  * expanding back to the full link set on hover or keyboard focus.
@@ -45,7 +54,7 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
       frame = 0;
       const mid = (window.scrollY || 0) + window.innerHeight * 0.5;
       let found = null;
-      for (const l of LINKS) {
+      for (const l of SPY) {
         const el = document.getElementById(l.id);
         if (el && el.offsetTop <= mid) found = l.id;
       }
@@ -141,7 +150,7 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
     };
   }, [active, solid, expanded]);
 
-  const current = LINKS.find((l) => l.id === active);
+  const current = SPY.find((l) => l.id === active);
 
   /**
    * Publish the bar's height as --nx-header-h.
@@ -221,8 +230,12 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
         onFocus={() => setExpanded(true)}
         onBlur={onBlur}
       >
-        <a href="#top" className="nx-head-mark" style={{ display: "inline-flex" }}>
-          <Logo />
+        {/* Both forms of the mark are rendered; CSS picks one. The N badge
+            exists for the phone island, where the wordmark and a section label
+            cannot share ~300px -- everywhere else it is display: none. The
+            aria-label keeps the link's name the full name whichever is shown. */}
+        <a href="#top" className="nx-head-mark" aria-label="Nexira IntelliX" style={{ display: "inline-flex" }}>
+          <Logo showIcon size={26} />
         </a>
 
         <nav className="nx-nav">
@@ -235,7 +248,7 @@ export default function Header({ navOpacity = 0, solid = 0 }) {
                 place you are standing is a dead control. */}
             <span className="nx-nav-current" aria-hidden="true">
               <i />
-              {current ? current.label : ""}
+              {current ? current.label : TOP_LABEL}
             </span>
 
             <span className="nx-nav-links" ref={linksRef}>

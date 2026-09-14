@@ -39,7 +39,11 @@ export default function App() {
             a second full-height statement between the work and the ask. */}
         <section style={{ borderTop: "1px solid var(--hairline)" }}>
           <TextVideoMask
-            src="/video/mancoding.mp4"
+            src="/video/Developer.mp4"
+            /* No tint: this clip is already shot in warm amber light, so it sits
+               on the page as it is, and recolouring it flattened the one thing
+               the band is for -- a recognisable person at work. */
+            tint={null}
             text={"NEXIRA\nINTELLIX"}
             style={{ height: "clamp(280px,48vh,520px)" }}
           />

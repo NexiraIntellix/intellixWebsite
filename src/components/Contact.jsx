@@ -1,20 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import Synthesis from "./Synthesis.jsx";
 
-/* Contact details, taken from Nexira Spatial's own contact page rather than
- * invented here: this is its IT division, the two share a door, and the
- * address below was already inherited on that basis.
+/* Contact details. The address and phone are Nexira Spatial's, taken from its
+ * own contact page rather than invented here: this is its IT division, and the
+ * two share a door. The inbox is IntelliX's own, supplied by the team.
  *
- * Both values were read off the live site rather than typed from memory --
+ * The phone was read off the live site rather than typed from memory --
  * a wrong digit in a `tel:` link is a live link that dials a stranger, which
  * is why PHONE sat null until there was a real one to put in it. The Call
  * button is gated on it and appears on its own now that there is.
  *
- * NOTE: the footer still publishes hello@nexiraintellix.com. Two addresses on
- * one page is a decision, not an accident -- if only one is real, the other
- * should go.
+ * Footer.jsx links the same inbox. Change it in both places, or the page
+ * ends up publishing two addresses.
  */
-const EMAIL = "info@nexiraspatial.com";
+const EMAIL = "nexiraintellix@gmail.com";
 const PHONE = "+91 7736459090";
 const ADDRESS = [
   "Suite No 290B, Heiley Offices, Basement Floor,",

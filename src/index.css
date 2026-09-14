@@ -746,6 +746,24 @@ input, textarea, select { font-family: inherit; }
   .nx-connect-btn:focus-visible::after { transform: none; }
 }
 
+/* Phones: the two contact pills at desktop size were 180px by 60px each,
+   stacked, with 0.14em-tracked capitals -- the loudest thing on the screen
+   after the headline. Smaller type, less padding. The floor on the width is
+   what the revealed address needs at the revealed size (measured: 154px for
+   nexiraintellix@gmail.com at 11.5px with 10px sides), plus a margin. This
+   sits after the reveal rules above on purpose -- a media query adds no
+   specificity, so placed earlier it would lose to them. */
+@media (max-width: 480px) {
+  .nx-connect-actions { gap: 12px; }
+  .nx-connect-btn {
+    min-width: 164px;
+    padding: 12px 22px;
+    font-size: 12.5px;
+    letter-spacing: 0.12em;
+  }
+  .nx-connect-btn::after { font-size: 11.5px; padding: 0 10px; }
+}
+
 /* ── Hero mark: the two halves drifting ───────────────────────────────────
    The transforms are written per frame by the loop in Hero3D, because the two
    halves run on different curves and each carries an arc that has to be
@@ -1129,6 +1147,8 @@ input, textarea, select { font-family: inherit; }
 @keyframes nx-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 /* ── Footer ───────────────────────────────────────────────────────────── */
+.nx-foot-row { max-width: 1240px; margin: 0 auto; display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start; }
+.nx-foot-brand { flex: 1; min-width: 260px; }
 .nx-foot-nav { display: flex; gap: 14px 26px; flex-wrap: wrap; font-size: 14.5px; align-items: center; }
 .nx-foot-nav a { color: var(--muted-2); transition: color 0.22s ease; }
 
@@ -1148,6 +1168,20 @@ input, textarea, select { font-family: inherit; }
      finger is aiming at 17px of text. The travelling pill is placed by
      translateX and width only, so a taller link box does not move it. */
   .nx-nav-link { padding: 11px 0; }
+}
+/* Narrow screens: one centred column. Side by side, the brand and the nav
+   share a left edge; once the nav wraps under the brand that edge is gone --
+   the mark is centred on its tagline, the links run ragged-right in rows of
+   uneven length, and the copyright below is centred -- three alignments
+   stacked in one column. Centring all of it gives the column one axis. */
+@media (max-width: 640px) {
+  .nx-foot-row { flex-direction: column; align-items: center; gap: 28px; }
+  .nx-foot-brand { flex: none; min-width: 0; text-align: center; }
+  .nx-foot-nav { justify-content: center; gap: 12px 22px; }
+  .nx-foot-nav a:last-child { flex-basis: 100%; text-align: center; }
+}
+@media (max-width: 640px) and (pointer: coarse) {
+  .nx-foot-nav { gap: 0 22px; }
 }
 .nx-foot-nav a:hover { color: var(--text-strong); }
 .nx-foot-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
@@ -1383,8 +1417,10 @@ html.nx-inverted .nx-header-inner a {
   text-shadow: none !important;
 }
 /* The wordmark keeps its accent half -- that is brand, not chrome -- but the
-   other half has to flip or it disappears into the white. */
-html.nx-inverted .nx-header-inner a[href="#top"] > span > span:first-child,
+   other half has to flip or it disappears into the white. Targeted by class:
+   this was `> span > span:first-child`, which silently moved onto the N badge
+   the moment the badge was rendered ahead of the wordmark. */
+html.nx-inverted .nx-header-inner .nx-logo-word,
 html.nx-inverted .nx-header-inner a[href="#top"] { color: var(--ink) !important; }
 html.nx-inverted .nx-header-inner a[href="#contact"] {
   background: var(--ink) !important;
@@ -1561,10 +1597,35 @@ html.nx-inverted .nx-nav-link { color: rgba(14, 20, 24, 0.66) !important; }
 html.nx-inverted .nx-nav-link[aria-current] { color: var(--ink) !important; }
 html.nx-inverted .nx-nav-current { color: var(--ink) !important; }
 
+/* The N badge is the phone island's mark only. !important because Logo sets
+   display: grid inline, and an inline style outranks any rule without it. */
+.nx-header .nx-logo-icon { display: none !important; }
+
+/* Phones have two headers, one per state.
+   Full-width bar, over the hero: the wordmark and the Contact CTA -- the one
+   place the page offers its way in before you have read anything. No section
+   label; there is no section yet.
+   Island, once into the page: the N badge and the section label. The badge
+   stands in for the wordmark because the two cannot share the island's width
+   with a label, and by then the name has already been read. No CTA -- the
+   label is the island's job at this width.
+   The label shows regardless of the expand state: there are no links to
+   expand to here, and a tap on the island fires the same focus/enter handlers
+   that on desktop swap the label out for the links. */
 @media (max-width: 720px) {
-  .nx-header-inner[data-island] { padding: 8px 8px 8px 16px; margin-top: 8px; gap: 12px; }
-  /* No room for a section label beside the wordmark and the CTA at this width. */
-  .nx-header-inner[data-island] .nx-nav-current { display: none !important; }
+  .nx-header-inner:not([data-island]) .nx-nav-current { display: none; }
+
+  .nx-header-inner[data-island] { padding: 7px 18px 7px 7px; margin-top: 8px; gap: 12px; }
+  .nx-header-inner[data-island] .nx-head-cta { display: none; }
+  .nx-header-inner[data-island] .nx-logo-word { display: none; }
+  .nx-header-inner[data-island] .nx-logo-icon { display: grid !important; font-size: 12px !important; }
+  .nx-header-inner[data-island] .nx-nav-swap .nx-nav-current {
+    position: relative;
+    opacity: 1;
+    pointer-events: none;
+    gap: 8px;
+    font-size: 13px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .nx-header-inner, .nx-nav-pill, .nx-nav-current, .nx-nav-links { transition: none; }

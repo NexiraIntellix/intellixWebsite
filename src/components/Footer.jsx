@@ -7,8 +7,11 @@
 export default function Footer() {
   return (
     <footer style={{ position: "relative", padding: "56px 28px 44px", borderTop: "1px solid var(--hairline)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", gap: 40, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div style={{ flex: 1, minWidth: 260 }}>
+      {/* Row and brand layout live in index.css (.nx-foot-row, .nx-foot-brand),
+          not inline: the narrow-screen layout overrides them, and an inline
+          style outranks any stylesheet rule. */}
+      <div className="nx-foot-row">
+        <div className="nx-foot-brand">
           {/* Mark centred on the sentence beneath it, not on the column: the
               wrapper shrinks to whichever of the two lines is wider -- the
               tagline -- so the centring is against that line's own width
@@ -38,7 +41,7 @@ export default function Footer() {
           <a href="https://www.nexiraspatial.com/" target="_blank" rel="noreferrer">
             Nexira Spatial <span aria-hidden="true">↗</span>
           </a>
-          <a href="mailto:info@nexiraspatial.com">info@nexiraspatial.com</a>
+          <a href="mailto:nexiraintellix@gmail.com">nexiraintellix@gmail.com</a>
         </nav>
       </div>
 

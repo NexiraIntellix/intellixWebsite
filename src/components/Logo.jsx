@@ -3,6 +3,7 @@ export default function Logo({ size = 32, fontSize = 18, showIcon = false }) {
     <span style={{ display: "inline-flex", alignItems: "center", gap: 12, color: "var(--text)" }}>
       {showIcon && (
         <span
+          className="nx-logo-icon"
           style={{
             width: size,
             height: size,
@@ -25,7 +26,7 @@ export default function Logo({ size = 32, fontSize = 18, showIcon = false }) {
           name copyable and readable to a screen reader, the margin stops it
           collapsing to nothing the way it did when the display face changed
           under a negative tracking value. */}
-      <span style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize, letterSpacing: "0", whiteSpace: "nowrap" }}>
+      <span className="nx-logo-word" style={{ fontFamily: "var(--display)", fontWeight: 700, fontSize, letterSpacing: "0", whiteSpace: "nowrap" }}>
         NEXIRA{" "}
         <span style={{ color: "var(--accent)", marginLeft: "0.06em" }}>INTELLIX</span>
       </span>

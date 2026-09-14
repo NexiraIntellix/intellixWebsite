@@ -28,19 +28,26 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
    measured bbox, so this is only the unit the glyphs are measured in. */
 const NOMINAL = 100;
 
+/* Word scale (screen px per user unit) at and above which the outline is drawn
+   at its full width. Laptop and desktop bands sit at 1.7-2.3; a phone band is
+   near 0.75, where the letters are a third the size -- a fixed 1.25px line
+   there reads three times as heavy against them, so below this it thins in
+   proportion to the type. */
+const OUTLINE_FULL_SCALE = 1.8;
+
 /* Ours now, and served from /public. This pointed at the stock clip the
    Framer module arrived with, hosted on framerusercontent -- a live
    dependency on a third-party CDN that outlived the port off Framer's
    canvas, for footage the site does not own. The band only reads as the
    team's own work if the footage in the letters is. */
-const DEFAULT_SRC = "/video/mancoding.mp4";
+const DEFAULT_SRC = "/video/Developer.mp4";
 
 /**
  * The word, drawn once. It is rendered twice -- live, as the thing that gets
  * measured, and again inside the mask -- and the two must be the same shape to
  * the pixel, so they come from one function.
  */
-function Word({ lines, lineHeight, fontFamily, fontWeight, letterSpacing, fill, textRef, opacity }) {
+function Word({ lines, lineHeight, fontFamily, fontWeight, letterSpacing, fill, stroke, strokeWidth, strokeOpacity, textRef, opacity }) {
   return (
     <text
       ref={textRef}
@@ -54,6 +61,10 @@ function Word({ lines, lineHeight, fontFamily, fontWeight, letterSpacing, fill, 
         fontSize: NOMINAL,
         letterSpacing,
         fill,
+        stroke,
+        strokeWidth,
+        strokeOpacity,
+        strokeLinejoin: "round",
         whiteSpace: "pre",
       }}
     >
@@ -84,6 +95,18 @@ export default function TextVideoMask({
   tint = "var(--a-5)",
   tintOpacity = 0.62,
   padding = 0.08,
+  /* Which part of the frame survives the crop, as CSS object-position. The
+     crop is taken against the word's own box, so it is the same at every
+     viewport -- tune it once against the footage and it holds. */
+  videoPosition = "50% 50%",
+  /* A hairline around the letters, drawn over the footage. The knockout only
+     reads where the clip is brighter than the ground, and footage has dark
+     passages -- through those the word simply dissolves into the plate. The
+     line keeps the letterforms legible whatever the frame is doing. Width is
+     in screen pixels; pass outlineWidth={0} to drop it. */
+  outlineColor = "var(--accent)",
+  outlineOpacity = 0.25,
+  outlineWidth = 1.25,
   autoPlay = true,
   loop = true,
   muted = true,
@@ -96,6 +119,7 @@ export default function TextVideoMask({
   const textRef = useRef(null);
 
   const [box, setBox] = useState(null);
+  const [size, setSize] = useState(null);
   const [still, setStill] = useState(false);
 
   const lines = String(text).split("\n");
@@ -134,6 +158,21 @@ export default function TextVideoMask({
       cancelled = true;
     };
   }, [text, fontFamily, fontWeight, letterSpacing, lineHeight, padding]);
+
+  /* The band's own size, so the word's on-screen rectangle can be worked out
+     below. The SVG draws the word with xMidYMid/meet, which is plain
+     arithmetic on these two numbers and the viewBox -- no second measurement
+     of the rendered glyphs is needed. */
+  useLayoutEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width: w, height: h } = entry.contentRect;
+      setSize((prev) => (prev && prev.w === w && prev.h === h ? prev : { w, h }));
+    });
+    ro.observe(host);
+    return () => ro.disconnect();
+  }, []);
 
   /* Reduced motion: no autoplaying footage. The word stays -- it is content. */
   useEffect(() => {
@@ -175,6 +214,21 @@ export default function TextVideoMask({
     ? { x: box.x - M, y: box.y - M, width: box.w + M * 2, height: box.h + M * 2 }
     : null;
 
+  /* Footage is laid over the word's rectangle, not the whole band. The word
+     fills only the middle of a wide band, so footage spread edge to edge put
+     most of the frame -- the subject included -- under the plate, where it is
+     never seen. Fitted to the word, the whole frame passes through the
+     letters, and `cover` only has to reconcile the word's aspect with the
+     clip's, which does not change with the viewport. */
+  let frame = null;
+  let k = 0;
+  if (box && size && size.w && size.h) {
+    k = Math.min(size.w / box.w, size.h / box.h);
+    const w = box.w * k;
+    const h = box.h * k;
+    frame = { left: (size.w - w) / 2, top: (size.h - h) / 2, width: w, height: h };
+  }
+
   const type = { lines, lineHeight, fontFamily, fontWeight, letterSpacing };
 
   return (
@@ -209,13 +263,12 @@ export default function TextVideoMask({
           onError={() => setStill(true)}
           style={{
             position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
+            ...(frame ?? { inset: 0, width: "100%", height: "100%" }),
             objectFit: "cover",
+            objectPosition: videoPosition,
             // Held back until the plate exists. Showing the footage before the
             // knockout is ready flashes the whole clip for a frame.
-            opacity: box ? 1 : 0,
+            opacity: frame ? 1 : 0,
             transition: "opacity 420ms ease",
           }}
         />
@@ -257,6 +310,21 @@ export default function TextVideoMask({
 
         {plate && !still && (
           <rect {...plate} mask={`url(#${maskId})`} style={{ fill: backgroundColor }} />
+        )}
+
+        {/* The outline, in user units converted from screen pixels: the viewBox
+            is scaled by k, so w / k user units lands at w px on screen. w is
+            outlineWidth on large bands and shrinks with the type on small
+            ones (see OUTLINE_FULL_SCALE). Only while footage is showing -- the
+            still fallback is already a solid word. */}
+        {plate && !still && frame && outlineWidth > 0 && (
+          <Word
+            {...type}
+            fill="none"
+            stroke={outlineColor}
+            strokeOpacity={outlineOpacity}
+            strokeWidth={(outlineWidth * Math.min(1, k / OUTLINE_FULL_SCALE)) / k}
+          />
         )}
 
         {/* The measured copy. Invisible while the footage shows through it;
