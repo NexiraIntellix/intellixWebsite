@@ -26,9 +26,12 @@ export function narrowPull(aspect) {
   return aspect >= REF_ASPECT ? 1 : Math.pow(REF_ASPECT / aspect, NARROW_EXP);
 }
 
-/** Move `pos` away from `look` by the pull factor, so the aim stays put. */
-export function pullBack(pos, look, aspect) {
-  const k = narrowPull(aspect);
+/** Move `pos` away from `look` by the pull factor, so the aim stays put.
+ *  `strength` scales the correction in log space: 1 is the full pull, 0 none.
+ *  The point cloud takes less than the MacBook, because on a phone its copy
+ *  sits on top of it -- it only has to stop overrunning the frame, not clear it. */
+export function pullBack(pos, look, aspect, strength = 1) {
+  const k = Math.pow(narrowPull(aspect), strength);
   if (k === 1) return pos;
   return pos.map((v, i) => look[i] + (v - look[i]) * k);
 }

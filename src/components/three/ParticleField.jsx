@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { pullBack } from "../../lib/framing.js";
+import { pullBack, narrowPull } from "../../lib/framing.js";
 import * as THREE from "three";
 import { token } from "../../lib/tokens.js";
 import { buildPointCloud } from "./pointCloud.js";
@@ -26,11 +26,19 @@ import { buildPointCloud } from "./pointCloud.js";
  * narrow frame, the sphere is small, and at 22k points it read as a faint
  * haze rather than an object. A third of desktop holds its surface.
  */
-function particleBudget(width) {
-  if (width < 640) return 30000;
-  if (width < 1100) return 48000;
-  return 90000;
+/* The desktop globe is the reference: 90k points on a 900px-tall frame.
+   The globe's on-screen size follows the frame's HEIGHT (the fov is vertical)
+   and shrinks further as narrow frames pull the camera back, so the budget
+   scales with the square of both. That keeps points-per-square-pixel -- which
+   is what makes it read as fine dust rather than a solid disc or a lattice --
+   the same on every screen. Floored at 42k: below that a phone globe reads as
+   scattered specks rather than a surface. */
+function particleBudget(width, height) {
+  const pull = narrowPull(width / height) ** 0.55;
+  const scale = Math.min(1, height / 900 / pull);
+  return Math.round(Math.max(42000, 90000 * scale * scale));
 }
+
 
 const VERTEX = /* glsl */ `
   attribute vec3 aTerrain;
@@ -42,6 +50,7 @@ const VERTEX = /* glsl */ `
   uniform float uTime;
   uniform float uSize;
   uniform float uPixelRatio;
+  uniform float uViewH;
   uniform float uCalm;
 
   varying float vElevation;
@@ -90,7 +99,12 @@ const VERTEX = /* glsl */ `
 
     // Perspective-correct sizing, floored so distant points stay above one
     // physical pixel -- below that they alias into flicker while scrolling.
-    gl_PointSize = max(uSize * uPixelRatio * (1.6 / -mv.z), uPixelRatio * 0.9);
+    // Scaled by the frame height against the 900px reference, so a dot is the
+    // same fraction of the globe on a phone as on the desktop it was tuned on.
+    // Capped at 1: frames taller than the reference keep the desktop look as is.
+    // Floored at 0.82: on a real phone the full ratio took dots under one CSS
+    // pixel, and additive points that small simply vanish against the ground.
+    gl_PointSize = max(uSize * uPixelRatio * max(0.82, min(1.0, uViewH / 900.0)) * (1.6 / -mv.z), uPixelRatio * 0.9);
 
     // Fade the far shell so the cloud dissolves into the background instead of
     // ending on a visible boundary.
@@ -170,7 +184,7 @@ export default function ParticleField({ progressRef, reducedMotion = false }) {
 
   // Budget is fixed at mount. Rebuilding 90k particles on every resize tick
   // would stall the main thread for exactly the reason we removed the frames.
-  const count = useMemo(() => particleBudget(size.width), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = useMemo(() => particleBudget(size.width, size.height), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cloud = useMemo(() => buildPointCloud(count), [count]);
 
@@ -178,7 +192,8 @@ export default function ParticleField({ progressRef, reducedMotion = false }) {
     () => ({
       uProgress: { value: 0 },
       uTime: { value: 0 },
-      uSize: { value: size.width < 640 ? 4.2 : 3.4 },
+      uSize: { value: 3.4 },
+      uViewH: { value: size.height },
       uPixelRatio: { value: Math.min(window.devicePixelRatio || 1, 2) },
       uCalm: { value: reducedMotion ? 0 : 1 },
       // The site's own palette: violet floor, cyan mid, lime peaks.
@@ -211,6 +226,10 @@ export default function ParticleField({ progressRef, reducedMotion = false }) {
 
     const u = materialRef.current?.uniforms;
     if (u) {
+      // The canvas renders at its own clamped dpr, not the device's; sizing
+      // against the device ratio made phone dots about 15% fatter than meant.
+      u.uPixelRatio.value = state.gl.getPixelRatio();
+      u.uViewH.value = state.size.height;
       u.uProgress.value = smoothed.current;
       u.uTime.value = state.clock.elapsedTime;
     }
@@ -220,7 +239,7 @@ export default function ParticleField({ progressRef, reducedMotion = false }) {
        is vertical, so on a phone held upright the globe overran the frame and
        the shot became its interior -- points everywhere, no silhouette, which
        is why it stopped reading as a globe at all. See lib/framing.js. */
-    const framed = pullBack(pos, look, size.width / size.height);
+    const framed = pullBack(pos, look, size.width / size.height, 0.55);
     camera.position.set(framed[0], framed[1], framed[2]);
     camera.lookAt(look[0], look[1], look[2]);
   });

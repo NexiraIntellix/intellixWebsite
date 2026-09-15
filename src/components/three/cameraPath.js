@@ -75,10 +75,16 @@ const REF_ASPECT = 1.0;
  * width measured. That is the open lid's own lean -- on a wide frame the
  * wordmark absorbs it (see the note above), but on a phone the mark is in
  * front and centred, so there is nothing to absorb it and the shot just looks
- * off. A third of a centimetre of aim covers it, and the same value works from
+ * off. A couple of millimetres of aim covers it, and the same value works from
  * 0.46 to 0.62 because what it has to cancel scales with the frame the same
- * way the frame's own width does. */
-const NARROW_LOOK_X = 0.034;
+ * way the frame's own width does.
+ *
+ * 0.012, not the 0.034 this first shipped with: that overshot, and on a 338px
+ * phone the machine landed about 18px LEFT of centre instead of 27px right.
+ * Tuned against the render in two passes; this lands the
+ * machine within about 2px of centre on a 338px phone, in line with the
+ * loading drawing that crossfades into it. */
+const NARROW_LOOK_X = 0.012;
 
 const wideAt = (aspect) => {
   const look = [

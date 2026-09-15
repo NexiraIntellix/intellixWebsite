@@ -104,9 +104,13 @@ export default function TextVideoMask({
      passages -- through those the word simply dissolves into the plate. The
      line keeps the letterforms legible whatever the frame is doing. Width is
      in screen pixels; pass outlineWidth={0} to drop it. */
-  outlineColor = "var(--accent)",
-  outlineOpacity = 0.25,
-  outlineWidth = 1.25,
+  /* Lighter and stronger than it started (accent at 25%). With darker footage
+     the letter edges sit on near-black on both sides, and a quarter-strength
+     amber line vanished into it -- on a phone, where it also thins with the
+     type, it was not visible at all. */
+  outlineColor = "var(--a-7)",
+  outlineOpacity = 0.42,
+  outlineWidth = 1.1,
   autoPlay = true,
   loop = true,
   muted = true,
@@ -323,7 +327,9 @@ export default function TextVideoMask({
             fill="none"
             stroke={outlineColor}
             strokeOpacity={outlineOpacity}
-            strokeWidth={(outlineWidth * Math.min(1, k / OUTLINE_FULL_SCALE)) / k}
+            // Floored at 0.8 screen pixel: thinning with the type took it to about
+            // half a pixel on a phone, which antialiases to nothing.
+            strokeWidth={Math.max(0.8, outlineWidth * Math.min(1, k / OUTLINE_FULL_SCALE)) / k}
           />
         )}
 

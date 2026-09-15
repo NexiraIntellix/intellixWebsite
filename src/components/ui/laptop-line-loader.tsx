@@ -77,7 +77,9 @@ export function LaptopLineLoader({
       const portrait = aspect < 1;
       const scale = portrait ? 1.01 / narrowPull(aspect) : 1;
       el.style.setProperty("--nx-ll-scale", String(scale));
-      el.style.setProperty("--nx-ll-dx", `${portrait ? -0.0515 * scale * h : 0}px`);
+      // Horizontal shift dropped: the hero's aim was retuned so the machine
+      // sits centred on phones, and the drawing follows it to the centre.
+      el.style.setProperty("--nx-ll-dx", "0px");
       el.style.setProperty("--nx-ll-dy", `${portrait ? -0.0088 * scale * h : 0}px`);
     };
     fit();
